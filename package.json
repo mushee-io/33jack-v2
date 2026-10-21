@@ -10,7 +10,8 @@
     "telegram:webhook": "node scripts/setup-telegram.mjs",
     "test:celo": "node --test scripts/test-celo-v2.mjs",
     "test:vercel": "node scripts/check-vercel-functions.mjs",
-    "test:platform": "node --test scripts/test-agent-platform.mjs"
+    "test:platform": "node --test scripts/test-agent-platform.mjs",
+    "test:activation": "node --test scripts/test-activation.mjs"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.14",

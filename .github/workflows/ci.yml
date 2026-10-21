@@ -28,6 +28,8 @@ jobs:
         run: npm run test:celo
       - name: Test V2 agent and operator security
         run: npm run test:platform
+      - name: Test secure activation and ephemeral agent tokens
+        run: npm run test:activation
       - name: Smoke backend flow
         run: npm run test:smoke
       - name: Build frontend

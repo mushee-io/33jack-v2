@@ -1,3 +1,11 @@
+# 33JACK V2 — Celo Mainnet + AI Agent Payment Infrastructure
+
+**This is the separate V2 repository.** It retains the original 33JACK application and channels, while adding a new wallet-signed Celo Mainnet payment rail and agent-to-agent payment API. Celo transfers require explicit human approval and wallet signature. V1 demo FX flows remain demo-only.
+
+**New V2 console:** `/app/celo` · **Setup, API and security guide:** [docs/CELO-V2.md](docs/CELO-V2.md)
+
+---
+
 # 33jack
 
 **The autonomous finance operator for cross-border businesses.**

@@ -39,6 +39,7 @@ import {
   Zap
 } from "lucide-react";
 import "./styles.css";
+import CeloWorkspace from "./CeloWorkspace.jsx";
 
 const samplePayments = [
   { company: "Austin Software Inc.", invoice: "US-33018", amount: "$6,250", route: "GBP → USDG → USD", status: "Settled", time: "12 min ago" },
@@ -57,6 +58,7 @@ const nav = [
   ["33Jack Crypto", Coins],
   ["33Jack Invoice", FilePlus2],
   ["Settlement Network", Globe2],
+  ["Celo Mainnet", Wallet],
   ["Payments", CircleDollarSign],
   ["Beneficiaries", WalletCards],
   ["Approvals", ShieldCheck],
@@ -72,6 +74,7 @@ const APP_ROUTES = {
   "33Jack Crypto": "/app/crypto",
   "33Jack Invoice": "/app/invoice",
   "Settlement Network": "/app/settlement-network",
+  "Celo Mainnet": "/app/celo",
   "Payments": "/app/payments",
   "Beneficiaries": "/app/beneficiaries",
   "Approvals": "/app/approvals"
@@ -907,7 +910,7 @@ function SettlementNetworkWorkspace() {
       </div>
 
       <div className="settlement-metrics">
-        <Metric label="Networks" value={networks.length} sub="Solana · Morph · Base"/>
+        <Metric label="Networks" value={networks.length} sub="Solana · Morph · Base · Celo"/>
         <Metric label="Providers" value={providers.length || 3} sub="Adapter-based registry"/>
         <Metric label="Policy" value="Deterministic" sub="LLM cannot choose or sign"/>
         <Metric label="Execution" value="Demo-safe" sub="No customer funds move"/>
@@ -2974,7 +2977,7 @@ function App() {
             <div className="app-trusted-marquee">
               <div className="app-trusted-track">
                 {Array.from({ length: 4 }).flatMap((_, repeat) =>
-                  ["Solana", "Wise", "USDG", "Telegram", "Groq", "Neon", "Vercel", "Banks", "Wallets", "Global payouts"].map((item, i) => (
+                  ["Celo", "USDC", "USDT", "Solana", "Wise", "USDG", "Telegram", "Groq", "Neon", "Vercel", "Wallets", "Global payouts"].map((item, i) => (
                     <span key={repeat + item} className={"logo-type logo-" + (i % 5)}>{item}</span>
                   ))
                 )}
@@ -3067,6 +3070,8 @@ function App() {
             <InvoiceWorkspace onUseInvoice={routeInvoiceToPayment} onNewPayment={() => setFlow(true)}/>
           ) : active === "Settlement Network" ? (
             <SettlementNetworkWorkspace/>
+          ) : active === "Celo Mainnet" ? (
+            <CeloWorkspace/>
           ) : (
             <RecordsWorkspace
               type={active}

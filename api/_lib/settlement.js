@@ -1,4 +1,14 @@
 const NETWORKS = {
+  celo: {
+    id: "celo",
+    name: "Celo",
+    mode: "demo",
+    status: "demo",
+    asset: "USDC / USDT / cUSD",
+    baseFeeUsd: 0.02,
+    latencySeconds: 5,
+    reliability: 0.99
+  },
   solana: {
     id: "solana",
     name: "Solana",

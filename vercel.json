@@ -29,6 +29,12 @@
     },
     "api/settlement-network.js": {
       "maxDuration": 15
+    },
+    "api/v2/agent.js": {
+      "maxDuration": 30
+    },
+    "api/v2/celo.js": {
+      "maxDuration": 15
     }
   },
   "rewrites": [

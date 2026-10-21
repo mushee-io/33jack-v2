@@ -113,12 +113,22 @@ function extractTransfer(log, proposal) {
 export async function verifyCeloPayment(proposal, hash, approvedAt) {
   const txHash = String(hash || "").trim();
   if (!HASH_RE.test(txHash)) throw new Error("Invalid transaction hash");
-  const [chain, receipt, currentBlock] = await Promise.all([
-    celoRpc("eth_chainId"), celoRpc("eth_getTransactionReceipt", [txHash]), celoRpc("eth_blockNumber")
+  if (!proposal.payer) throw new Error("Verified transfer requires a specified payer wallet");
+  const [chain, receipt, currentBlock, transaction] = await Promise.all([
+    celoRpc("eth_chainId"), celoRpc("eth_getTransactionReceipt", [txHash]), celoRpc("eth_blockNumber"), celoRpc("eth_getTransactionByHash", [txHash])
   ]);
   if (Number(BigInt(chain)) !== CELO_NETWORK.chainId) throw new Error("RPC is not connected to Celo Mainnet");
   if (!receipt) return { pending: true, reason: "Transaction not yet mined" };
   if (receipt.status !== "0x1") throw new Error("Onchain transaction reverted");
+  if (!transaction) return {pending:true,reason:"Transaction details not yet available"};
+  const expected=prepareCeloTransfer(proposal);
+  if (String(transaction.hash||"").toLowerCase()!==txHash.toLowerCase()) throw new Error("Transaction hash mismatch");
+  if (String(transaction.from||"").toLowerCase()!==proposal.payer.toLowerCase()) throw new Error("Transaction payer mismatch");
+  if (String(transaction.to||"").toLowerCase()!==expected.to.toLowerCase()) throw new Error("Transaction token contract mismatch");
+  if (String(transaction.input||transaction.data||"").toLowerCase()!==expected.data.toLowerCase()) throw new Error("Transaction calldata mismatch");
+  if (BigInt(transaction.value||"0x0")!==0n) throw new Error("Unexpected native currency transfer");
+  if (String(transaction.blockNumber||"").toLowerCase()!==String(receipt.blockNumber).toLowerCase()) throw new Error("Transaction and receipt disagree on block");
+
   if (String(receipt.transactionHash || "").toLowerCase() !== txHash.toLowerCase()) throw new Error("Receipt hash mismatch");
   const minedBlock = BigInt(receipt.blockNumber);
   const confirmations = BigInt(currentBlock) - minedBlock + 1n;

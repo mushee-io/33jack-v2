@@ -35,6 +35,7 @@ export default async function handler(req, res) {
       const idempotency = String(req.headers["idempotency-key"] || "").trim();
       if (!/^[a-zA-Z0-9_.:-]{8,128}$/.test(idempotency)) return res.status(400).json({ error: "Idempotency-Key header (8-128 safe characters) is required" });
       const proposal = normalizeCeloProposal(req.body || {});
+      if (!proposal.payer) return res.status(400).json({error:"Agent proposals must bind the exact payer wallet"});
       const result = await proposeV2Intent(actor.agentId, proposal, idempotency);
       return res.status(result.created ? 201 : 200).json({ ok: true, ...result, nextAction: "human_approval_required" });
     }

@@ -57,6 +57,7 @@ test("onchain receipt verification requires exact official contract, amount and 
   const toTopic = "0x" + "0".repeat(24) + recipient.slice(2);
   const event = { address: proposal.tokenAddress, topics: [topic, fromTopic, toTopic], data: "0x" + BigInt(proposal.amountUnits).toString(16).padStart(64, "0"), logIndex: "0x0" };
   const receipt = { transactionHash: txHash, blockNumber: "0x64", status: "0x1", logs: [event] };
+  const transaction = {hash:txHash,from:payer,to:proposal.tokenAddress,input:prepareCeloTransfer(proposal).data,value:"0x0",blockNumber:"0x64"};
   const original = globalThis.fetch;
   let chainId = "0xa4ec";
   try {
@@ -65,6 +66,7 @@ test("onchain receipt verification requires exact official contract, amount and 
       const responses = {
         eth_chainId: chainId,
         eth_getTransactionReceipt: receipt,
+        eth_getTransactionByHash: transaction,
         eth_blockNumber: "0x66",
         eth_getBlockByNumber: { timestamp: "0x6a6a6a6a" }
       };
@@ -80,6 +82,12 @@ test("onchain receipt verification requires exact official contract, amount and 
     receipt.logs = [{ ...event, topics: [topic, fromTopic, "0x" + "0".repeat(24) + "4".repeat(40)] }];
     await assert.rejects(verifyCeloPayment(proposal, txHash), /No exact approved/);
     receipt.logs = [event];
+    transaction.from = "0x" + "3".repeat(40);
+    await assert.rejects(verifyCeloPayment(proposal, txHash), /payer mismatch/);
+    transaction.from = payer;
+    transaction.input = "0x" + "0".repeat(136);
+    await assert.rejects(verifyCeloPayment(proposal, txHash), /calldata mismatch/);
+    transaction.input = prepareCeloTransfer(proposal).data;
     chainId = "0x1";
     await assert.rejects(verifyCeloPayment(proposal, txHash), /not connected/);
   } finally {

@@ -26,6 +26,8 @@ jobs:
         run: npm run test:vercel
       - name: Test Celo V2 payment security
         run: npm run test:celo
+      - name: Test V2 agent and operator security
+        run: npm run test:platform
       - name: Smoke backend flow
         run: npm run test:smoke
       - name: Build frontend

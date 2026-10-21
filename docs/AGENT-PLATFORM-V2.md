@@ -59,3 +59,9 @@ This release is a source implementation, NOT a claim of completed public-mainnet
 - 33JACK's historical Solana Devnet/Wise Sandbox functions are retained for migration and are not proof of mainnet banking support.
 
 Deployment-ready does not mean money-ready.
+
+## Owner bootstrap and short-lived agent tokens
+
+Visit /setup.html on the access-protected V2 deployment. Retrieve JACK_BOOTSTRAP_SECRET inside Vercel project settings; do not send this secret through chat. Create your own strong password, enter the generated TOTP seed in an authenticator, and finish enrolment with a six-digit code. V2 encrypts TOTP seeds in the independent Neon database and blocks further first-owner bootstraps after success.
+
+Required environment: JACK_OPERATOR_DB_AUTH=true, JACK_PRIMARY_WORKSPACE_ID, JACK_BOOTSTRAP_SECRET, JACK_AGENT_TOKEN_SECRET, JACK_SESSION_SECRET, DATABASE_URL. Agent token issuance in /agent-console.html requires an MFA owner, an enabled allowlist policy and produces a signed 1-to-24-hour key. It is shown only once. Rotate JACK_AGENT_TOKEN_SECRET for emergency revocation; old tokens otherwise expire within 24 hours. No key permits a wallet transfer without human MFA approval and the user's wallet signature.

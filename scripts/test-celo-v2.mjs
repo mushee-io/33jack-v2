@@ -37,7 +37,7 @@ test("unconfigured and invalid agent keys fail closed", () => {
   process.env.JACK_AGENT_API_KEYS_JSON = JSON.stringify({ bot: "a".repeat(32) });
   assert.equal(requireAgent({ headers: { "x-jack-agent-id": "bot", authorization: "Bearer wrong" } }).status, 401);
   assert.equal(requireAgent({ headers: { "x-jack-agent-id": "bot", authorization: "Bearer " + "a".repeat(32) } }).agentId, "bot");
-  assert.equal(requireHumanApproval({ headers: {} }).status, 503);
+  assert.equal(requireHumanApproval({ headers: {} }).status, 401);
   process.env.JACK_APPROVAL_API_KEY = "b".repeat(32);
   process.env.JACK_ALLOW_LEGACY_APPROVAL_KEY="true";
   assert.equal(requireHumanApproval({ headers: { "x-jack-approval-key": "a".repeat(32) } }).status, 403);

@@ -287,7 +287,7 @@ export default function CeloWorkspace({ seed = null }) {
         <article className="celo-v2-panel">
           <span className="eyebrow">03 / PAYMENT INTENT</span><h3>Prepare a payment</h3>
           <div className="celo-v2-two">
-            <label>Token<select value={token} onChange={e => setToken(e.target.value)}>{(tokens.length ? tokens : [{symbol:"USDC"},{symbol:"USDT"},{symbol:"cUSD"}]).map(t => <option value={t.symbol} key={t.symbol}>{t.symbol}</option>)}</select></label>
+            <label>Token<select value={token} onChange={e => setToken(e.target.value)}>{(tokens.length ? tokens : [{symbol:"USDC"},{symbol:"USDT"},{symbol:"USDm"}]).map(t => <option value={t.symbol} key={t.symbol}>{t.symbol}</option>)}</select></label>
             <label>Amount<input value={amount} inputMode="decimal" onChange={e => setAmount(e.target.value)} placeholder="1.00"/></label>
           </div>
           <label>Recipient address<input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="0x…" spellCheck={false}/></label>

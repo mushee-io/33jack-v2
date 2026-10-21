@@ -6,7 +6,7 @@
 - Chain ID: 42220 (0xa4ec)
 - Default JSON RPC: https://forno.celo.org
 - Explorer: https://celoscan.io
-- Stablecoins: native USDC 0xcebA9300f2b948710d2653dD7B07f33A8B32118C (6 decimals); USDT 0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e (6 decimals); cUSD 0x765DE816845861e75A25fCA122bb6898B8B1282a (18 decimals).
+- Stablecoins: native USDC 0xcebA9300f2b948710d2653dD7B07f33A8B32118C (6 decimals); USDT 0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e (6 decimals); USDm (formerly cUSD) 0x765DE816845861e75A25fCA122bb6898B8B1282a (18 decimals).
 - Primary references: https://github.com/celo-org/celo-token-list ; https://docs.celo.org/ ; https://viem.sh/docs/chains/celo
 
 ## Configure Vercel
@@ -63,3 +63,5 @@ The channel review link is a bearer credential for WhatsApp/WeChat and expires a
 After a Celo onchain transfer is verified, channel reconciliation also mirrors `settled_celo` and the transaction hash to the V2 invoice dashboard. If this secondary sync fails, `invoiceSynced:false` is returned and the idempotent confirm endpoint can retry without a second payment.
 
 When Celo reconciliation succeeds and the invoice sync completes, the V2 channel workflow attempts a platform-specific receipt with the Celo transaction explorer and exact stablecoin amount. A failed channel notification does not reverse a verified transfer; the idempotent confirmation endpoint may retry sending.
+
+Asset naming audit (21 October 2026): Celo's current stablecoin documentation calls the Mento dollar at `0x765DE816845861e75A25fCA122bb6898B8B1282a` **USDm**. V2 accepts legacy `cUSD` input as an alias and preserves old signed intent decoding, but labels new payments USDm. Verify tokens against the current Celo contract registry before production funding.

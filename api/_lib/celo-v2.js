@@ -15,7 +15,7 @@ export const CELO_NETWORK = Object.freeze({
 export const CELO_TOKENS = Object.freeze({
   USDC: { symbol: "USDC", address: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C", decimals: 6 },
   USDT: { symbol: "USDT", address: "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e", decimals: 6 },
-  cUSD: { symbol: "cUSD", address: "0x765DE816845861e75A25fCA122bb6898B8B1282a", decimals: 18 }
+  USDm: { symbol: "USDm", address: "0x765DE816845861e75A25fCA122bb6898B8B1282a", decimals: 18 }
 });
 
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -53,8 +53,9 @@ function parseUnitLimit(value, decimals) {
 
 export function normalizeCeloProposal(input = {}) {
   const requestedToken = String(input.token || "USDC").trim();
-  const token = CELO_TOKENS[requestedToken.toUpperCase() === "CUSD" ? "cUSD" : requestedToken.toUpperCase()];
-  if (!token) throw new Error("Supported Celo assets: USDC, USDT, cUSD");
+  const key = ["CUSD", "USDM"].includes(requestedToken.toUpperCase()) ? "USDm" : requestedToken.toUpperCase();
+  const token = CELO_TOKENS[key];
+  if (!token) throw new Error("Supported Celo assets: USDC, USDT, USDm (formerly cUSD)");
   const recipient = normalizeAddress(input.recipient, "recipient");
   const payer = input.payer ? normalizeAddress(input.payer, "payer") : null;
   const amount = String(input.amount ?? "").trim();
@@ -64,7 +65,7 @@ export function normalizeCeloProposal(input = {}) {
 }
 
 export function prepareCeloTransfer(proposal) {
-  const token = CELO_TOKENS[proposal.token];
+  const token = CELO_TOKENS[proposal.token === "cUSD" ? "USDm" : proposal.token];
   if (!token || token.address.toLowerCase() !== proposal.tokenAddress.toLowerCase()) {
     throw new Error("Unsupported token contract");
   }

@@ -7,7 +7,7 @@ test("network metadata and native token addresses", () => {
   assert.equal(CELO_NETWORK.chainId, 42220);
   assert.equal(CELO_TOKENS.USDC.decimals, 6);
   assert.equal(CELO_TOKENS.USDT.decimals, 6);
-  assert.equal(CELO_TOKENS.cUSD.decimals, 18);
+  assert.equal(CELO_TOKENS.USDm.decimals, 18);
 });
 test("precise base units and overflow rejection", () => {
   assert.equal(parseTokenAmount("1.234567", 6), "1234567");
@@ -27,6 +27,8 @@ test("recipient and exact ERC20 transfer encoding", () => {
   assert.equal(tx.data, "0xa9059cbb" + "0".repeat(24) + to.slice(2) + BigInt(1250000).toString(16).padStart(64, "0"));
   assert.throws(() => normalizeAddress("0x" + "0".repeat(40)), /zero/);
   assert.throws(() => normalizeCeloProposal({token:"FAKE",amount:"1",recipient:to}), /Supported/);
+  assert.equal(normalizeCeloProposal({token:"cUSD",amount:"1",recipient:to}).token, "USDm");
+  assert.equal(normalizeCeloProposal({token:"USDm",amount:"1",recipient:to}).token, "USDm");
 });
 test("unconfigured and invalid agent keys fail closed", () => {
   delete process.env.JACK_AGENT_API_KEYS_JSON;

@@ -4,7 +4,7 @@ const NETWORKS = {
     name: "Celo",
     mode: "demo",
     status: "demo",
-    asset: "USDC / USDT / cUSD",
+    asset: "USDC / USDT / USDm",
     baseFeeUsd: 0.02,
     latencySeconds: 5,
     reliability: 0.99

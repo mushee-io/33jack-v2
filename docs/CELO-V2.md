@@ -59,3 +59,5 @@ The V2 channel API is POST-only: /api/v2/channel?operation=context|propose|appro
 The channel review link is a bearer credential for WhatsApp/WeChat and expires after 15 minutes. A separate human approval credential is required; handle review links securely. Existing channel integrations **will not** work unless their provider keys, callback webhooks, workspace permissions and V2 database are configured. Celo payment intent expiry remains 30 minutes.
 
 **Limitations:** A WhatsApp/WeChat signed link alone does not prove the current browser user owns that messaging account. Do not weaken the separate human-approval credential or wallet-signature requirements. A production rollout should use user accounts + MFA/role-managed approval instead of sharing an operator approval API key. Celo is a wallet-to-wallet rail, not fiat payouts or automatic FX.
+
+After a Celo onchain transfer is verified, channel reconciliation also mirrors `settled_celo` and the transaction hash to the V2 invoice dashboard. If this secondary sync fails, `invoiceSynced:false` is returned and the idempotent confirm endpoint can retry without a second payment.

@@ -898,10 +898,10 @@ export async function markCeloInvoiceSettled(paymentId, workspaceId, txHash) {
   const rows = await client`
     update jack_payments set
       status = 'settled_celo',
-      settlement_signature = \${String(txHash)},
+      settlement_signature = ${String(txHash)},
       updated_at = now()
-    where id = \${String(paymentId)}
-      and workspace_id = \${String(workspaceId)}
+    where id = ${String(paymentId)}
+      and workspace_id = ${String(workspaceId)}
       and status in ('analyzed', 'failed')
     returning id
   `;

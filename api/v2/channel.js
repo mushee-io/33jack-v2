@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { requireHumanApproval } from "../_lib/agent-v2-auth.js";
 import { authorizeChannelInvoice, assertInvoiceEligibility, safeInvoiceSummary } from "../_lib/channel-v2-auth.js";
 import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "../_lib/celo-v2.js";
-import { addAuditEvent } from "../_lib/db.js";
+import { addAuditEvent, markCeloInvoiceSettled } from "../_lib/db.js";
 import { proposeV2Intent, getV2Intent, getV2IntentForInvoice, approveV2Intent, recordV2Confirmation } from "../_lib/agent-v2-store.js";
 
 const errorJson = (res, err) => res.status(err?.status || (err?.code === "23505" ? 409 : 400)).json({
@@ -81,7 +81,10 @@ export default async function handler(req, res) {
       });
       return res.status(200).json({ ok:true,intent:updated,unsignedTransaction:prepareCeloTransfer(updated),nextAction:"wallet_signature_required" });
     }
-    if (intent.status === "confirmed") return res.status(200).json({ok:true,intent,idempotent:true});
+    if (intent.status === "confirmed") {
+      const invoiceSynced = await markCeloInvoiceSettled(ctx.payment.id,ctx.workspaceId,intent.txHash).catch(()=>false);
+      return res.status(200).json({ok:true,intent,idempotent:true,invoiceSynced});
+    }
     if (intent.status !== "approved" || Date.now() >= new Date(intent.expiresAt).getTime()) {
       throw Object.assign(new Error("Proposal is not approved or has expired"),{status:409});
     }
@@ -93,6 +96,7 @@ export default async function handler(req, res) {
       intent_id:id,network:"celo",tx_hash:verification.txHash,token:intent.token,
       amount:intent.amount,recipient:intent.recipient,workspace_id:ctx.workspaceId
     });
-    return res.status(200).json({ok:true,intent:updated,verification});
+    const invoiceSynced = await markCeloInvoiceSettled(ctx.payment.id,ctx.workspaceId,verification.txHash).catch(()=>false);
+    return res.status(200).json({ok:true,intent:updated,verification,invoiceSynced});
   } catch(err) { return errorJson(res,err); }
 }

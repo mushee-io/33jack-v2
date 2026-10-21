@@ -93,7 +93,13 @@ export default function CeloWorkspace({ seed = null }) {
         const data = await channelRequest("context");
         if (!active) return;
         setInvoice(data.invoice);
-        if (data.intent) setIntent(data.intent);
+        if (data.intent) {
+          setIntent(data.intent);
+          if (data.intent.status === "approved") {
+            const pending = await channelRequest("refresh", { id:data.intent.id });
+            if (active) setUnsignedTx(pending.unsignedTransaction);
+          }
+        }
         setMemo("33JACK invoice:" + data.invoice.id);
       } catch(e) {
         if (active) setError("Signed invoice review failed: " + (e.message || "unknown error"));

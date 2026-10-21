@@ -118,7 +118,7 @@ function compactStatus(payments = []) {
     ["analyzed", "approved", "settling", "failed"].includes(String(p.status || ""))
   );
   const settled = payments.filter((p) =>
-    ["settled_demo", "settled_devnet"].includes(String(p.status || ""))
+    ["settled_demo", "settled_devnet", "settled_celo"].includes(String(p.status || ""))
   );
   const flagged = payments.filter((p) =>
     p.risk?.duplicate ||
@@ -488,7 +488,7 @@ export async function sendTelegramPaymentReceipt({ payment, userId, base = "" })
     }
   }
 
-  if (!["settled_demo", "settled_devnet"].includes(String(payment.status || ""))) {
+  if (!["settled_demo", "settled_devnet", "settled_celo"].includes(String(payment.status || ""))) {
     throw new Error(`Payment is not settled yet (current status: ${payment.status || "unknown"})`);
   }
 
@@ -704,7 +704,7 @@ export async function handleTelegramMiniAppAction(req, res) {
     const payment = await getPayment(paymentId);
     if (!payment) return res.status(404).json({ error: "Payment not found" });
 
-    if (!["settled_demo", "settled_devnet"].includes(String(payment.status || ""))) {
+    if (!["settled_demo", "settled_devnet", "settled_celo"].includes(String(payment.status || ""))) {
       return res.status(409).json({
         error: "Payment is not settled yet",
         detail: `Current status is ${payment.status || "unknown"}`

@@ -578,7 +578,7 @@ function compactStatus(payments = []) {
     ["analyzed", "approved", "settling", "failed"].includes(String(p.status || ""))
   );
   const settled = payments.filter((p) =>
-    ["settled_demo", "settled_devnet"].includes(String(p.status || ""))
+    ["settled_demo", "settled_devnet", "settled_celo"].includes(String(p.status || ""))
   );
   const flagged = payments.filter((p) =>
     p.risk?.duplicate ||
@@ -683,7 +683,7 @@ export async function sendWhatsAppPaymentReceipt({ payment, whatsappUserId, base
     return { ok: true, idempotent: false, suppressed: true };
   }
 
-  if (!["settled_demo", "settled_devnet"].includes(String(payment.status || ""))) {
+  if (!["settled_demo", "settled_devnet", "settled_celo"].includes(String(payment.status || ""))) {
     throw new Error(`Payment is not settled yet (current status: ${payment.status || "unknown"})`);
   }
 
@@ -1217,7 +1217,7 @@ export async function handleWhatsAppWebhook(req, res, rawBody) {
       if (reviewRequested && referenced) {
         const blockers = paymentReviewBlockers(referenced);
         const state = String(referenced.status || "");
-        if (["settled_demo", "settled_devnet"].includes(state)) {
+        if (["settled_demo", "settled_devnet", "settled_celo"].includes(state)) {
           await sendText(
             from,
             `${referenced.supplier || "This invoice"} is already settled. Reference: ${referenced.invoice_number || referenced.invoice_name || referenced.id}.`

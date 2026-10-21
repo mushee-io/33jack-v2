@@ -251,7 +251,8 @@ export default function CeloWorkspace({ seed = null }) {
     <section className="celo-v2">
       <header className="celo-v2-hero">
         <div><span className="eyebrow">33JACK V2 · CELO MAINNET</span><h2>Payments infrastructure for people and AI agents.</h2>
-          <p>Prepare payment intents through 33JACK, require separate human approval, sign with your wallet and reconcile against Celo onchain evidence.</p></div>
+          <p>Prepare payment intents through 33JACK, require separate human approval, sign with your wallet and reconcile against Celo onchain evidence.</p>
+          <p><a href="/login.html">Secure operator sign in</a> · <a href="/finance-ops.html">Invoice inbox</a> · <a href="/agent-console.html">Agent policies & schedules</a></p></div>
         <span className="celo-v2-chain">◉ Celo · 42220</span>
       </header>
       <div className="celo-v2-metrics">

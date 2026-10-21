@@ -1,3 +1,9 @@
+# 33JACK V2 | AI Financial Operations and Celo Agent Infrastructure
+
+New: MFA operator sessions, policy-guarded Celo transfers, MCP/A2A agent APIs, receipt attestations, Gmail invoice review, recurring approval queues, x402 adapter, stablecoin route quotes and SDKs. Production credentials, real low-value payments and independent security testing are still required.
+
+[Full V2 build/deployment guide](docs/AGENT-PLATFORM-V2.md) | [Agent console](https://33jack-v2.vercel.app/agent-console.html) | [Finance inbox](https://33jack-v2.vercel.app/finance-ops.html)
+
 # 33JACK V2 — Celo Mainnet + AI Agent Payment Infrastructure
 
 **This is the separate V2 repository.** It retains the original 33JACK application and channels, while adding a new wallet-signed Celo Mainnet payment rail and agent-to-agent payment API. Celo transfers require explicit human approval and wallet signature. V1 demo FX flows remain demo-only.

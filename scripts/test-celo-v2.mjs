@@ -39,10 +39,12 @@ test("unconfigured and invalid agent keys fail closed", () => {
   assert.equal(requireAgent({ headers: { "x-jack-agent-id": "bot", authorization: "Bearer " + "a".repeat(32) } }).agentId, "bot");
   assert.equal(requireHumanApproval({ headers: {} }).status, 503);
   process.env.JACK_APPROVAL_API_KEY = "b".repeat(32);
+  process.env.JACK_ALLOW_LEGACY_APPROVAL_KEY="true";
   assert.equal(requireHumanApproval({ headers: { "x-jack-approval-key": "a".repeat(32) } }).status, 403);
   assert.equal(requireHumanApproval({ headers: { "x-jack-approval-key": "b".repeat(32) } }).allowed, true);
   delete process.env.JACK_AGENT_API_KEYS_JSON;
   delete process.env.JACK_APPROVAL_API_KEY;
+  delete process.env.JACK_ALLOW_LEGACY_APPROVAL_KEY;
 });
 
 test("onchain receipt verification requires exact official contract, amount and recipient", async () => {

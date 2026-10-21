@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import { addAuditEvent, getBeneficiaryControl, getTelegramWorkspaceMembership, roleCan } from "./_lib/db.js";
 import { verifyPayoutApproval } from "./_lib/payout-approval.js";
 import { getPayout, savePayout } from "./_lib/payout-store.js";
@@ -51,6 +52,7 @@ function externalReceipt(payout, tracking = null) {
 }
 
 export default async function handler(req, res) {
+  if (String(req.body?.channel||"").toLowerCase()!=="telegram" && !gateLegacy(req,res)) return;
   try {
     if (req.method === "GET") {
       const payout = await getPayout(req.query?.payoutId);

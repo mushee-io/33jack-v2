@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import {requireOperator} from "./operator-auth.js";
 
 function safeCompare(candidate, expected) {
   const a = createHash("sha256").update(String(candidate || "")).digest();
@@ -22,6 +23,9 @@ export function requireAgent(req) {
 }
 
 export function requireHumanApproval(req) {
+  const operator = requireOperator(req,["owner","admin","approver"]);
+  if (operator.actor) return { allowed:true,operatorId:operator.actor.id,role:operator.actor.role,workspaceId:operator.actor.workspaceId };
+  if (process.env.JACK_ALLOW_LEGACY_APPROVAL_KEY !== "true") return operator;
   const configured = String(process.env.JACK_APPROVAL_API_KEY || "");
   const supplied = String(req.headers["x-jack-approval-key"] || "");
   if (configured.length < 32) return { error: "Human approval key not configured", status: 503 };
@@ -32,5 +36,5 @@ export function requireHumanApproval(req) {
       return { error: "Approval and agent credentials must be separate", status: 503 };
     }
   } catch { return { error: "Agent key configuration invalid", status: 503 }; }
-  return { allowed: true };
+  return {allowed:true,operatorId:"legacy-api-key"};
 }

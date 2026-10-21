@@ -68,11 +68,11 @@ export async function getV2Intent(agentId, id) {
   return publicIntent(rows[0]);
 }
 
-export async function approveV2Intent(agentId, id) {
+export async function approveV2Intent(agentId, id, approvedBy = "legacy-api-key") {
   const sql = await ensureV2Store();
   const rows = await sql.unsafe(
-    "UPDATE jack_v2_intents SET status='approved', approved_at=NOW(), approved_by='human-api-key' " +
-    "WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() RETURNING *", [id, agentId]
+    "UPDATE jack_v2_intents SET status='approved', approved_at=NOW(), approved_by=$3 " +
+    "WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() RETURNING *", [id, agentId, approvedBy]
   );
   return publicIntent(rows[0]);
 }

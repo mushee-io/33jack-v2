@@ -24,6 +24,8 @@ export default function CeloWorkspace({ seed = null }) {
   const [agentId, setAgentId] = useState("");
   const [agentKey, setAgentKey] = useState("");
   const [approvalKey, setApprovalKey] = useState("");
+  const [operator, setOperator] = useState(null);
+  useEffect(() => { fetch("/api/v2/auth?operation=session").then(r=>r.ok?r.json():null).then(r=>setOperator(r?.actor||null)).catch(()=>{}); },[]);
   const [token, setToken] = useState("USDC");
   const [amount, setAmount] = useState("1");
   const [recipient, setRecipient] = useState("");
@@ -301,7 +303,7 @@ export default function CeloWorkspace({ seed = null }) {
         <article className="celo-v2-panel">
           <span className="eyebrow">04 / APPROVE & SETTLE</span><h3>Human-controlled execution</h3>
           <p>No agent can send funds on its own. Human approval and a separate wallet signature are mandatory.</p>
-          <label>Separate approval credential<input type="password" autoComplete="off" value={approvalKey} onChange={e => setApprovalKey(e.target.value)} placeholder="Human approval secret"/></label>
+          {operator ? <p>Signed in as {operator.id} ({operator.role}). MFA verified.</p> : <p><a href="/login.html">Sign in with MFA to approve payments</a></p>}
           <div className="celo-v2-actions">
             <button type="button" disabled={working || intent?.status !== "proposed" || (channelProof && !invoice?.canApprove)} onClick={approve}>Approve exact terms</button>
             <button type="button" disabled={working || intent?.status !== "approved" || !unsignedTx || Boolean(txHash)} onClick={send}>Send with wallet</button>

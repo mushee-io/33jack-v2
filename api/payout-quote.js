@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import { addAuditEvent, getBeneficiaryControl, getOrCreateTelegramWorkspace, getPayment, roleCan } from "./_lib/db.js";
 import { verifyTelegramInitData } from "./_lib/telegram-auth.js";
 import { getPayoutQuote } from "./_lib/payout-provider.js";
@@ -13,6 +14,7 @@ function cleanBeneficiary(input = {}) {
 }
 
 export default async function handler(req, res) {
+  if (String(req.body?.channel||"").toLowerCase()!=="telegram" && !gateLegacy(req,res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   try {

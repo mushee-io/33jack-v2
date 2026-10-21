@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       if (approval.error) return res.status(approval.status).json({ error: approval.error });
       const id = safeId(req.body?.id);
       if (req.body?.confirmation !== "APPROVE:" + id) return res.status(400).json({ error: "Explicit approval confirmation does not match intent" });
-      const intent = await approveV2Intent(actor.agentId, id);
+      const intent = await approveV2Intent(actor.agentId, id, approval.operatorId || "legacy-api-key");
       if (!intent) return res.status(409).json({ error: "Proposal was not found, has expired, or cannot be approved" });
       return res.status(200).json({ ok: true, intent, unsignedTransaction: prepareCeloTransfer(intent), nextAction: "wallet_signature_required" });
     }

@@ -95,7 +95,7 @@ export default async function handler(req, res) {
           String(body.confirmTerms?.token) !== intent.token) {
         throw Object.assign(new Error("Approval details differ from the original proposal"),{status:409});
       }
-      const updated = await approveV2Intent(ctx.actorId,id);
+      const updated = await approveV2Intent(ctx.actorId,id,gate.operatorId || "legacy-api-key");
       if (!updated) throw Object.assign(new Error("Proposal expired or has already changed state"),{status:409});
       await addAuditEvent(ctx.payment.id,"celo_v2_approved",ctx.identity,{
         intent_id:id,channel:ctx.channel,workspace_id:ctx.workspaceId

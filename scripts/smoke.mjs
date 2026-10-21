@@ -4,7 +4,7 @@ import analyze from "../api/analyze.js";
 import agent from "../api/agent.js";
 import approve from "../api/approve.js";
 import settle from "../api/settle.js";
-import paymentDetail from "../api/payment.js";
+// Payment detail is served by the consolidated payments handler.
 import payments from "../api/payments.js";
 import health from "../api/health.js";
 import reconcile from "../api/reconcile.js";
@@ -105,7 +105,7 @@ assert.equal(replay.status, 200);
 assert.equal(replay.data.idempotent, true);
 assert.equal(replay.data.signature, settlement.data.signature);
 
-const detail = await invoke(paymentDetail, "GET", undefined, { id: first.data.id });
+const detail = await invoke(payments, "GET", undefined, { kind: "detail", id: first.data.id });
 assert.equal(detail.status, 200);
 assert.equal(detail.data.payment.status, "settled_demo");
 assert.ok(detail.data.events.length >= 3);

@@ -18,9 +18,6 @@
     "api/payments.js": {
       "maxDuration": 15
     },
-    "api/payment.js": {
-      "maxDuration": 15
-    },
     "api/health.js": {
       "maxDuration": 10
     },

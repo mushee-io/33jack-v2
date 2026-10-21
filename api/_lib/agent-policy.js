@@ -28,7 +28,7 @@ export function evaluateAgentPolicy(raw,proposal,prior=[]){
   if(!policy.tokens.includes(proposal.token))return{allowed:false,reason:"Token is outside agent allowlist"};
   if(!policy.recipients.includes(String(proposal.recipient||"").toLowerCase()))return{allowed:false,reason:"Recipient is not allowlisted"};
   if(!policy.payers.includes(String(proposal.payer||"").toLowerCase()))return{allowed:false,reason:"Payer wallet is not allowlisted"};
-  const amount=BigInt(proposal.amountUnits)*(10n**BigInt(18-proposal.decimals));
+  const amount=BigInt(proposal.amountUnits??proposal.amount_units)*(10n**BigInt(18-Number(proposal.decimals)));
   if(amount>amountE18(policy.maxPerPayment))return{allowed:false,reason:"Per-payment policy ceiling exceeded"};
   let committed=0n;
   for(const old of prior){const dec=Number(old.decimals);if(dec<0||dec>18)throw Error("Invalid stored token decimals");committed+=BigInt(old.amount_units)*(10n**BigInt(18-dec));}

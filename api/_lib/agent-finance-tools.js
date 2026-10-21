@@ -1,5 +1,6 @@
 import {createHash} from "node:crypto";
 import {requireAgent} from "./agent-v2-auth.js";
+import {checkAgentPolicy} from "./agent-policy.js";
 import {normalizeCeloProposal,prepareCeloTransfer,verifyCeloPayment,CELO_NETWORK} from "./celo-v2.js";
 import {proposeV2Intent,getV2Intent,recordV2Confirmation} from "./agent-v2-store.js";
 export const PAYMENT_TOOLS=[
@@ -27,6 +28,8 @@ export async function runAgentPaymentTool(req,tool,args={}){
  if(tool==="celo_payment_propose"){
   const proposal=normalizeCeloProposal(args);
   if(!proposal.payer)throw Object.assign(new Error("Payer address is mandatory"),{status:400});
+  const policy=await checkAgentPolicy(agent.agentId,proposal);
+  if(!policy.allowed)throw Object.assign(new Error("Agent spending policy denied: "+policy.reason),{status:403});
   const result=await proposeV2Intent(agent.agentId,proposal,safeKey(args.idempotencyKey));
   return {ok:true,...result,nextAction:"human_MFA_approval_required"};
  }

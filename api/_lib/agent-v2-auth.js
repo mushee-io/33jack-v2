@@ -10,7 +10,7 @@ function safeCompare(candidate, expected) {
 export function mintAgentToken(agentId,hours=24){
  const secret=String(process.env.JACK_AGENT_TOKEN_SECRET||"");
  if(secret.length<48)throw Object.assign(new Error("Agent signing key not configured"),{status:503});
- if(!/^[a-z0-9_-]{2,64}$/i.test(String(agentId||"")))throw Object.assign(new Error("Invalid agent ID"),{status:400});
+ if(!/^[a-z0-9_-]{2,64}$/i.test(String(agentId||""))||/^(?:channel_|operator_)/i.test(String(agentId)))throw Object.assign(new Error("Invalid or reserved agent ID"),{status:400});
  if(!Number.isInteger(hours)||hours<1||hours>24)throw Object.assign(new Error("Agent credentials expire within 24 hours"),{status:400});
  const issued=Date.now(),claims={sub:agentId,iat:issued,exp:issued+hours*3600000,scope:"jack:agent",nonce:randomBytes(12).toString("hex")};
  const payload=Buffer.from(JSON.stringify(claims)).toString("base64url");
@@ -31,6 +31,7 @@ function verifySignedAgentToken(bearer,id){
 export function requireAgent(req) {
  const agentId=String(req.headers?.["x-jack-agent-id"]||"").trim();
  const bearer=String(req.headers?.authorization||"").match(/^Bearer (.+)$/i)?.[1]||"";
+ if(/^(?:channel_|operator_)/i.test(agentId))return {error:"Reserved agent ID",status:403};
  if(/^[a-z0-9_-]{2,64}$/i.test(agentId)&&bearer.startsWith("jack2.")){
   const signed=verifySignedAgentToken(bearer,agentId);
   return signed||{error:"Agent authentication failed",status:401};

@@ -10,7 +10,7 @@ export default async function handler(req,res){
  if(Number(req.headers?.["content-length"]||0)>3000)return res.status(413).json({error:"Too large"});
  try{
   const agentId=String(req.body?.agentId||"").trim();
-  if(!/^[a-z0-9_-]{2,64}$/i.test(agentId)||agentId.startsWith("channel_"))return res.status(400).json({error:"Valid external agent ID required"});
+  if(!/^[a-z0-9_-]{2,64}$/i.test(agentId)||/^(?:channel_|operator_)/i.test(agentId))return res.status(400).json({error:"Valid external agent ID required"});
   const configured=await getAgentPolicy(agentId);
   if(configured?.policy?.enabled!==true)return res.status(409).json({error:"Configure and enable an agent spending policy first"});
   const credential=mintAgentToken(agentId,Number(req.body?.hours??24));

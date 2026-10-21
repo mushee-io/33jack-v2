@@ -38,7 +38,7 @@ export function evaluateAgentPolicy(raw,proposal,prior=[]){
 }
 export async function getAgentPolicy(agentId){const sql=await ensureAgentPolicyStore();const rows=await sql.unsafe("SELECT policy,updated_by,updated_at FROM jack_v2_agent_policies WHERE agent_id=$1",[agentId]);return rows[0]||null;}
 export async function setAgentPolicy(agentId,raw,actorId){
- if(!/^[a-z0-9_-]{2,64}$/i.test(String(agentId||""))||String(agentId).startsWith("channel_"))throw Object.assign(new Error("Invalid external agent ID"),{status:400});
+ if(!/^[a-z0-9_-]{2,64}$/i.test(String(agentId||""))||/^(?:channel_|operator_)/i.test(String(agentId)))throw Object.assign(new Error("Invalid external agent ID"),{status:400});
  const policy=normalizeAgentPolicy(raw),sql=await ensureAgentPolicyStore();
  await sql.unsafe("INSERT INTO jack_v2_agent_policies(agent_id,policy,updated_by) VALUES($1,$2::jsonb,$3) ON CONFLICT(agent_id) DO UPDATE SET policy=excluded.policy,updated_by=excluded.updated_by,updated_at=NOW()",[agentId,JSON.stringify(policy),actorId]);
  return policy;

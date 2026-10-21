@@ -1,0 +1,93 @@
+import postgres from "postgres";
+import { randomUUID, createHash } from "node:crypto";
+
+let client;
+let initialized;
+function db() {
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for Celo V2; in-memory settlement is disabled");
+  if (!client) client = postgres(process.env.DATABASE_URL, { max: 3, idle_timeout: 20, connect_timeout: 8 });
+  return client;
+}
+export async function ensureV2Store() {
+  if (!initialized) {
+    initialized = db().unsafe(
+      "CREATE TABLE IF NOT EXISTS jack_v2_intents (" +
+      "id UUID PRIMARY KEY, agent_id TEXT NOT NULL, idempotency_key TEXT NOT NULL, fingerprint TEXT NOT NULL, " +
+      "chain_id INTEGER NOT NULL, token TEXT NOT NULL, token_address TEXT NOT NULL, decimals INTEGER NOT NULL, " +
+      "amount TEXT NOT NULL, amount_units TEXT NOT NULL, recipient TEXT NOT NULL, payer TEXT, memo TEXT NOT NULL DEFAULT '', " +
+      "status TEXT NOT NULL DEFAULT 'proposed', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), " +
+      "expires_at TIMESTAMPTZ NOT NULL, approved_at TIMESTAMPTZ, approved_by TEXT, " +
+      "tx_hash TEXT UNIQUE, confirmed_at TIMESTAMPTZ, verification JSONB, " +
+      "UNIQUE(agent_id, idempotency_key))"
+    ).catch((error) => { initialized = null; throw error; });
+  }
+  await initialized;
+  return db();
+}
+function publicIntent(row) {
+  if (!row) return null;
+  return {
+    id: row.id, agentId: row.agent_id, chainId: row.chain_id,
+    token: row.token, tokenAddress: row.token_address, decimals: row.decimals,
+    amount: row.amount, amountUnits: row.amount_units, recipient: row.recipient,
+    payer: row.payer, memo: row.memo, status: row.status,
+    createdAt: row.created_at, expiresAt: row.expires_at,
+    approvedAt: row.approved_at, confirmedAt: row.confirmed_at,
+    txHash: row.tx_hash, verification: row.verification
+  };
+}
+
+export async function proposeV2Intent(agentId, proposal, key) {
+  const sql = await ensureV2Store();
+  const fingerprint = createHash("sha256").update(JSON.stringify(proposal)).digest("hex");
+  const id = randomUUID();
+  const rows = await sql.unsafe(
+    "INSERT INTO jack_v2_intents (id,agent_id,idempotency_key,fingerprint,chain_id,token,token_address,decimals,amount,amount_units,recipient,payer,memo,expires_at) " +
+    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW() + INTERVAL '30 minutes') " +
+    "ON CONFLICT(agent_id,idempotency_key) DO NOTHING RETURNING *",
+    [id, agentId, key, fingerprint, proposal.chainId, proposal.token, proposal.tokenAddress, proposal.decimals,
+      proposal.amount, proposal.amountUnits, proposal.recipient, proposal.payer, proposal.memo]
+  );
+  if (rows[0]) return { intent: publicIntent(rows[0]), created: true };
+  const existing = await sql.unsafe(
+    "SELECT * FROM jack_v2_intents WHERE agent_id=$1 AND idempotency_key=$2", [agentId, key]
+  );
+  if (existing[0]?.fingerprint !== fingerprint) {
+    const error = new Error("Idempotency key is already bound to a different payment"); error.status = 409; throw error;
+  }
+  return { intent: publicIntent(existing[0]), created: false };
+}
+
+export async function getV2Intent(agentId, id) {
+  const sql = await ensureV2Store();
+  const rows = await sql.unsafe("SELECT * FROM jack_v2_intents WHERE id=$1 AND agent_id=$2", [id, agentId]);
+  return publicIntent(rows[0]);
+}
+
+export async function approveV2Intent(agentId, id) {
+  const sql = await ensureV2Store();
+  const rows = await sql.unsafe(
+    "UPDATE jack_v2_intents SET status='approved', approved_at=NOW(), approved_by='human-api-key' " +
+    "WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() RETURNING *", [id, agentId]
+  );
+  return publicIntent(rows[0]);
+}
+
+export async function recordV2Confirmation(agentId, id, result) {
+  const sql = await ensureV2Store();
+  let rows;
+  try {
+    rows = await sql.unsafe(
+      "UPDATE jack_v2_intents SET status='confirmed', tx_hash=$3, confirmed_at=NOW(), verification=$4::jsonb " +
+      "WHERE id=$1 AND agent_id=$2 AND status='approved' AND expires_at>NOW() RETURNING *",
+      [id, agentId, result.txHash, JSON.stringify(result)]
+    );
+  } catch (error) {
+    if (error.code === "23505") {
+      const conflict = new Error("This transaction was already assigned to another payment");
+      conflict.status = 409; throw conflict;
+    }
+    throw error;
+  }
+  return publicIntent(rows[0]);
+}

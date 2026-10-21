@@ -1,6 +1,6 @@
-import { requireAgent, requireHumanApproval } from "../_lib/agent-v2-auth.js";
-import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "../_lib/celo-v2.js";
-import { proposeV2Intent, getV2Intent, approveV2Intent, recordV2Confirmation } from "../_lib/agent-v2-store.js";
+import { requireAgent, requireHumanApproval } from "./agent-v2-auth.js";
+import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "./celo-v2.js";
+import { proposeV2Intent, getV2Intent, approveV2Intent, recordV2Confirmation } from "./agent-v2-store.js";
 
 const TOOLS = [
   { name: "celo_payment_propose", method: "POST", operation: "propose", description: "Prepare an approval-required stablecoin transfer to an exact Celo recipient." },

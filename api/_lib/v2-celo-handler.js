@@ -1,4 +1,4 @@
-import { CELO_NETWORK, CELO_TOKENS, celoHealth } from "../_lib/celo-v2.js";
+import { CELO_NETWORK, CELO_TOKENS, celoHealth } from "./celo-v2.js";
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");

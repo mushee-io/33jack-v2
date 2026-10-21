@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { requireHumanApproval } from "../_lib/agent-v2-auth.js";
-import { authorizeChannelInvoice, assertInvoiceEligibility, safeInvoiceSummary } from "../_lib/channel-v2-auth.js";
-import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "../_lib/celo-v2.js";
-import { addAuditEvent, markCeloInvoiceSettled, getPayment } from "../_lib/db.js";
-import { sendTelegramPaymentReceipt } from "../_lib/telegram.js";
-import { sendWhatsAppPaymentReceipt } from "../_lib/whatsapp.js";
-import { sendWeChatPaymentReceipt } from "../_lib/wechat.js";
-import { proposeV2Intent, getV2Intent, getV2IntentForInvoice, approveV2Intent, recordV2Confirmation } from "../_lib/agent-v2-store.js";
+import { requireHumanApproval } from "./agent-v2-auth.js";
+import { authorizeChannelInvoice, assertInvoiceEligibility, safeInvoiceSummary } from "./channel-v2-auth.js";
+import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "./celo-v2.js";
+import { addAuditEvent, markCeloInvoiceSettled, getPayment } from "./db.js";
+import { sendTelegramPaymentReceipt } from "./telegram.js";
+import { sendWhatsAppPaymentReceipt } from "./whatsapp.js";
+import { sendWeChatPaymentReceipt } from "./wechat.js";
+import { proposeV2Intent, getV2Intent, getV2IntentForInvoice, approveV2Intent, recordV2Confirmation } from "./agent-v2-store.js";
 
 async function notifyChannelReceipt(ctx) {
   const payment = await getPayment(ctx.payment.id);

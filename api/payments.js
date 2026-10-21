@@ -7,6 +7,7 @@ import {
   getPayment,
   listBeneficiaries,
   listPayments,
+  listAuditEvents,
   persistenceMode,
   savePayment
 } from "./_lib/db.js";
@@ -28,6 +29,14 @@ function deleteAuthorized(req) {
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
+    if (String(req.query?.kind || "").toLowerCase() === "detail") {
+      const id = String(req.query?.id || "").trim();
+      if (!id || id.length > 150) return res.status(400).json({error:"id is required"});
+      const payment = await getPayment(id);
+      if (!payment) return res.status(404).json({error:"Payment not found"});
+      const events = await listAuditEvents(id,100);
+      return res.status(200).json({payment,events});
+    }
     const rawLimit = Number(req.query?.limit || 25);
     const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 25, 1), 100);
 

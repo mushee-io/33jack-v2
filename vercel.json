@@ -30,17 +30,19 @@
     "api/settlement-network.js": {
       "maxDuration": 15
     },
-    "api/v2/agent.js": {
-      "maxDuration": 30
-    },
-    "api/v2/celo.js": {
-      "maxDuration": 15
-    },
-    "api/v2/channel.js": {
+    "api/v2.js": {
       "maxDuration": 30
     }
   },
   "rewrites": [
+    {
+      "source": "/api/v2/:resource",
+      "destination": "/api/v2?resource=:resource"
+    },
+    {
+      "source": "/api/payment",
+      "destination": "/api/payments?kind=detail"
+    },
     {
       "source": "/api/settlement-health",
       "destination": "/api/settlement-network?action=health"

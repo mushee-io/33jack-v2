@@ -22,6 +22,8 @@ jobs:
         run: find api -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Check Solana runtime import
         run: node -e "Promise.all([import('@solana/web3.js'), import('@solana/spl-token')]).then(([w]) => { new w.Connection('https://api.devnet.solana.com', 'confirmed'); console.log('solana settlement runtime ok') })"
+      - name: Ensure Vercel API function budget and routing
+        run: npm run test:vercel
       - name: Test Celo V2 payment security
         run: npm run test:celo
       - name: Smoke backend flow

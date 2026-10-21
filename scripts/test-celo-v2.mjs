@@ -103,3 +103,22 @@ test("channel invoice role, risk and no automatic FX", () => {
   assert.equal(invoiceChannelAgentId("one"),invoiceChannelAgentId("one"));
   assert.notEqual(invoiceChannelAgentId("one"),invoiceChannelAgentId("two"));
 });
+
+
+import v2Handler from "../api/v2.js";
+
+test("consolidated V2 API preserves discovery, Celo config and invalid route rejection", async () => {
+  async function run(method, query) {
+    const req = { method, query, headers:{} };
+    const res = { code:200, setHeader(){return this;}, status(code){this.code=code;return this;}, json(data){return {status:this.code,data};} };
+    return v2Handler(req,res);
+  }
+  const tools = await run("GET", {resource:"agent",operation:"tools"});
+  assert.equal(tools.status,200);
+  assert.equal(tools.data.network,"Celo Mainnet");
+  const config = await run("GET", {resource:"celo",operation:"config"});
+  assert.equal(config.status,200);
+  assert.equal(config.data.network.chainId,42220);
+  assert.ok(config.data.tokens.some(x=>x.symbol==="USDm"));
+  assert.equal((await run("GET",{resource:"wrong"})).status,404);
+});

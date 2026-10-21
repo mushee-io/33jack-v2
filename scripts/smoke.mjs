@@ -61,6 +61,8 @@ process.env.DATABASE_URL = "";
 process.env.SOLANA_DEVNET_PAYER_SECRET_KEY = "";
 process.env.SOLANA_SETTLEMENT_RECEIVER = "";
 process.env.APPROVAL_HMAC_SECRET = "ci-smoke-secret";
+process.env.NODE_ENV = "test";
+process.env.JACK_LEGACY_TEST_ACCESS = "enabled";
 
 const invoice = Buffer.from(
   "INVOICE 33J-CI-1\nSupplier: Austin Software Inc.\nAmount due: GBP 4850\nTarget: USD",

@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import { signApproval } from "./_lib/approval.js";
 import { verifyTelegramApproval } from "./_lib/telegram-auth.js";
 import {
@@ -24,6 +25,7 @@ function approvalChannelName({ telegramAuth, whatsappAuth, wechatAuth }) {
 }
 
 export default async function handler(req, res) {
+  if (!["telegram","whatsapp","wechat"].includes(String(req.body?.channel||"").toLowerCase()) && !gateLegacy(req,res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   try {

@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import crypto from "node:crypto";
 import {
   addAuditEvent,
@@ -28,6 +29,7 @@ function deleteAuthorized(req) {
 }
 
 export default async function handler(req, res) {
+  if (!gateLegacy(req,res)) return;
   if (req.method === "GET") {
     if (String(req.query?.kind || "").toLowerCase() === "detail") {
       const id = String(req.query?.id || "").trim();

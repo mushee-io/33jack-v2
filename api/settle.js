@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import { verifyApproval } from "./_lib/approval.js";
 import {
   addAuditEvent,
@@ -222,6 +223,7 @@ async function existingSettlementResponse(payment, connection) {
 }
 
 export default async function handler(req, res) {
+  if (!["telegram","whatsapp","wechat"].includes(String(req.body?.channel||"").toLowerCase()) && !gateLegacy(req,res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   let payment;

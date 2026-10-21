@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import {
   executeDemoSettlement,
   getSettlementRegistry,
@@ -5,6 +6,7 @@ import {
 } from "./_lib/settlement.js";
 
 export default async function handler(req, res) {
+  if (!gateLegacy(req,res)) return;
   const action = String(req.query?.action || "").toLowerCase();
 
   if (action === "health") {

@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import { getPayoutProviderReadiness } from "./_lib/payout-provider.js";
 import { getPolicyConfig } from "./_lib/policy.js";
 import { telegramReadiness } from "./_lib/telegram.js";
@@ -235,6 +236,7 @@ async function whatsappDiagnostic() {
 }
 
 export default async function handler(req, res) {
+  if (!gateLegacy(req,res)) return;
   const payoutProvider = getPayoutProviderReadiness();
   const payoutPolicy = getPolicyConfig();
   const telegram = telegramReadiness();

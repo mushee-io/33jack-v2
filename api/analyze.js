@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import crypto from "node:crypto";
 import OpenAI from "openai";
 // Keep the PDF.js worker in the Vercel serverless bundle. PDF.js uses a fake
@@ -153,6 +154,7 @@ function missingCoreFields(parsed) {
 }
 
 export default async function handler(req, res) {
+  if (!gateLegacy(req,res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   const { fileName, mimeType, fileData, corridor = "USD" } = req.body || {};

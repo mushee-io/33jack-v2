@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import OpenAI from "openai";
 import { listBeneficiaries, listPayments } from "./_lib/db.js";
 import { handleTelegramMiniAppAction, handleTelegramWebhook } from "./_lib/telegram.js";
@@ -282,6 +283,7 @@ export default async function handler(req, res) {
     return handleTelegramMiniAppAction(req, res);
   }
 
+  if (!gateLegacy(req,res)) return;
   const message = String(body?.message || "").trim();
   if (!message) return res.status(400).json({ error: "message is required" });
   if (message.length > 2000) return res.status(400).json({ error: "message is too long" });

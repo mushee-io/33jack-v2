@@ -661,9 +661,8 @@ export async function sendWeChatPaymentReceipt({ payment, wechatOpenId, base = "
   const amount = payment.source_amount && payment.source_currency
     ? `${payment.source_currency} ${Number(payment.source_amount).toLocaleString()}`
     : "—";
-  const status = payment.status === "settled_devnet"
-    ? "Settled on Solana Devnet"
-    : "Settled in controlled demo";
+  const status = payment.status === "settled_celo" ? "Settled on Celo Mainnet" :
+    payment.status === "settled_devnet" ? "Settled on Solana Devnet" : "Settled in controlled demo";
 
   const lines = [
     "33Jack payment complete",
@@ -673,6 +672,7 @@ export async function sendWeChatPaymentReceipt({ payment, wechatOpenId, base = "
     `Invoice amount: ${amount}`,
     `Destination: ${payment.destination_amount || payment.destination_currency || "—"}`,
     `Status: ${status}`,
+    payment.approval?.celo ? `Celo settlement: ${payment.approval.celo.amount} ${payment.approval.celo.token}` : null,
     "Reconciled: ✓",
     payment.settlement_signature ? `Reference: ${payment.settlement_signature}` : null
   ].filter(Boolean);
@@ -682,6 +682,9 @@ export async function sendWeChatPaymentReceipt({ payment, wechatOpenId, base = "
       "",
       `Solana Explorer: https://explorer.solana.com/tx/${payment.settlement_signature}?cluster=devnet`
     );
+  }
+  if (payment.status === "settled_celo" && payment.settlement_signature) {
+    lines.push("", `Celo Explorer: https://celoscan.io/tx/${payment.settlement_signature}`);
   }
   if (base) lines.push("", `Open 33Jack: ${base}`);
 

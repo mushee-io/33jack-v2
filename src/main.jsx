@@ -2886,7 +2886,7 @@ function App() {
           : p.destination_amount || "—",
         route: p.route || "Route pending",
         status:
-          p.status === "settled_devnet" || p.status === "settled_demo" ? "Settled"
+          ["settled_devnet","settled_demo","settled_celo"].includes(p.status) ? "Settled"
           : p.status === "approved" || p.status === "settling" ? "Review"
           : p.risk?.duplicate || p.risk?.beneficiary_changed || p.risk?.suspicious ? "Flagged"
           : "Review",

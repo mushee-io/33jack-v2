@@ -161,7 +161,7 @@
 
       function statusMeta(status) {
         const s = String(status || "");
-        if (["settled_demo","settled_devnet","reconciled_external"].includes(s)) return ["good", "Settled"];
+        if (["settled_demo","settled_devnet","settled_celo","reconciled_external"].includes(s)) return ["good", "Settled"];
         if (["failed","rejected","attention_external"].includes(s)) return ["bad", s.replaceAll("_"," ")];
         if (["approved","settling","processing_external","external_created"].includes(s)) return ["warn", s.replaceAll("_"," ")];
         return ["", s.replaceAll("_"," ") || "Unknown"];
@@ -181,6 +181,7 @@
         const [tone, label] = statusMeta(p.status);
         const flags = riskText(p);
         const explorer = p.settlement?.explorer || "";
+        const celoExplorer = explorer.includes("celoscan.io");
         return `
           <article class="card">
             <div class="card-head">
@@ -198,8 +199,8 @@
             </div>
             <div class="riskline ${flags.length ? "warn" : ""}">${flags.length ? "Review: " + esc(flags.join("; ")) : "No active risk blocker"}</div>
             <div class="actions">
-              ${p.review_url ? '<button class="action primary review" data-url="' + esc(p.review_url) + '" type="button">Review & Pay</button>' : ""} ${p.celo_url ? '<button class="action review" data-url="' + esc(p.celo_url) + '" type="button">Pay on Celo</button>' : ""} ${p.celo_url ? '<button class="action review" data-url="' + esc(p.celo_url) + '" type="button">Pay on Celo</button>' : ""}
-              ${explorer ? '<button class="action explorer" data-url="' + esc(explorer) + '" type="button">Solana transaction</button>' : ""}
+              ${p.review_url ? '<button class="action primary review" data-url="' + esc(p.review_url) + '" type="button">Review & Pay</button>' : ""} ${p.celo_url ? '<button class="action review" data-url="' + esc(p.celo_url) + '" type="button">Pay on Celo</button>' : ""}
+              ${explorer ? '<button class="action explorer" data-url="' + esc(explorer) + '" type="button">' + (celoExplorer ? 'Celo transaction' : 'Solana transaction') + '</button>' : ""}
             </div>
           </article>`;
       }
@@ -240,6 +241,7 @@
                   </div>
                   <div class="actions">
                     ${p.review_url ? '<button class="action primary review" data-url="' + esc(p.review_url) + '" type="button">Review & Pay</button>' : ""}
+                    ${p.celo_url ? '<button class="action review" data-url="' + esc(p.celo_url) + '" type="button">Pay on Celo</button>' : ""}
                   </div>
                 </article>`;
             }).join("")

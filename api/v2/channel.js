@@ -2,9 +2,30 @@ import { randomUUID } from "node:crypto";
 import { requireHumanApproval } from "../_lib/agent-v2-auth.js";
 import { authorizeChannelInvoice, assertInvoiceEligibility, safeInvoiceSummary } from "../_lib/channel-v2-auth.js";
 import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "../_lib/celo-v2.js";
-import { addAuditEvent, markCeloInvoiceSettled } from "../_lib/db.js";
+import { addAuditEvent, markCeloInvoiceSettled, getPayment } from "../_lib/db.js";
+import { sendTelegramPaymentReceipt } from "../_lib/telegram.js";
+import { sendWhatsAppPaymentReceipt } from "../_lib/whatsapp.js";
+import { sendWeChatPaymentReceipt } from "../_lib/wechat.js";
 import { proposeV2Intent, getV2Intent, getV2IntentForInvoice, approveV2Intent, recordV2Confirmation } from "../_lib/agent-v2-store.js";
 
+async function notifyChannelReceipt(ctx) {
+  const payment = await getPayment(ctx.payment.id);
+  if (!payment || payment.status !== "settled_celo") return {attempted:false};
+  const identity = ctx.identity.slice(ctx.channel.length + 1);
+  const base = String(process.env.PUBLIC_APP_URL || process.env.APP_BASE_URL || "").replace(/\/$/,"");
+  const notify = {
+    telegram:()=>sendTelegramPaymentReceipt({payment,userId:identity,base}),
+    whatsapp:()=>sendWhatsAppPaymentReceipt({payment,whatsappUserId:identity,base}),
+    wechat:()=>sendWeChatPaymentReceipt({payment,wechatOpenId:identity,base})
+  };
+  try {
+    const result = await notify[ctx.channel]();
+    return {attempted:true, sent:result.ok === true, idempotent:result.idempotent === true};
+  } catch(error) {
+    await addAuditEvent(payment.id,"celo_v2_channel_receipt_failed",ctx.identity,{reason:String(error.message||"unknown").slice(0,160)}).catch(()=>{});
+    return {attempted:true,sent:false};
+  }
+}
 const errorJson = (res, err) => res.status(err?.status || (err?.code === "23505" ? 409 : 400)).json({
   ok: false,
   error: err?.status === 503 ? "V2 integration is not configured" : String(err?.message || "Celo checkout failed").slice(0, 260)
@@ -82,8 +103,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok:true,intent:updated,unsignedTransaction:prepareCeloTransfer(updated),nextAction:"wallet_signature_required" });
     }
     if (intent.status === "confirmed") {
-      const invoiceSynced = await markCeloInvoiceSettled(ctx.payment.id,ctx.workspaceId,intent.txHash).catch(()=>false);
-      return res.status(200).json({ok:true,intent,idempotent:true,invoiceSynced});
+      const invoiceSynced = await markCeloInvoiceSettled(ctx.payment.id,ctx.workspaceId,intent.txHash,intent).catch(()=>false);
+      const channelReceipt = invoiceSynced ? await notifyChannelReceipt(ctx) : {attempted:false};
+      return res.status(200).json({ok:true,intent,idempotent:true,invoiceSynced,channelReceipt});
     }
     if (intent.status !== "approved" || Date.now() >= new Date(intent.expiresAt).getTime()) {
       throw Object.assign(new Error("Proposal is not approved or has expired"),{status:409});
@@ -96,7 +118,8 @@ export default async function handler(req, res) {
       intent_id:id,network:"celo",tx_hash:verification.txHash,token:intent.token,
       amount:intent.amount,recipient:intent.recipient,workspace_id:ctx.workspaceId
     });
-    const invoiceSynced = await markCeloInvoiceSettled(ctx.payment.id,ctx.workspaceId,verification.txHash).catch(()=>false);
-    return res.status(200).json({ok:true,intent:updated,verification,invoiceSynced});
+    const invoiceSynced = await markCeloInvoiceSettled(ctx.payment.id,ctx.workspaceId,verification.txHash,updated).catch(()=>false);
+    const channelReceipt = invoiceSynced ? await notifyChannelReceipt(ctx) : {attempted:false};
+    return res.status(200).json({ok:true,intent:updated,verification,invoiceSynced,channelReceipt});
   } catch(err) { return errorJson(res,err); }
 }

@@ -61,3 +61,5 @@ The channel review link is a bearer credential for WhatsApp/WeChat and expires a
 **Limitations:** A WhatsApp/WeChat signed link alone does not prove the current browser user owns that messaging account. Do not weaken the separate human-approval credential or wallet-signature requirements. A production rollout should use user accounts + MFA/role-managed approval instead of sharing an operator approval API key. Celo is a wallet-to-wallet rail, not fiat payouts or automatic FX.
 
 After a Celo onchain transfer is verified, channel reconciliation also mirrors `settled_celo` and the transaction hash to the V2 invoice dashboard. If this secondary sync fails, `invoiceSynced:false` is returned and the idempotent confirm endpoint can retry without a second payment.
+
+When Celo reconciliation succeeds and the invoice sync completes, the V2 channel workflow attempts a platform-specific receipt with the Celo transaction explorer and exact stablecoin amount. A failed channel notification does not reverse a verified transfer; the idempotent confirmation endpoint may retry sending.

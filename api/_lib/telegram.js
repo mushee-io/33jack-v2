@@ -327,7 +327,9 @@ function dashboardPayment(payment, userId, base, role) {
       signature: payment.settlement_signature || null,
       explorer: payment.status === "settled_devnet" && payment.settlement_signature
         ? `https://explorer.solana.com/tx/${payment.settlement_signature}?cluster=devnet`
-        : null
+        : payment.status === "settled_celo" && payment.settlement_signature
+          ? `https://celoscan.io/tx/${payment.settlement_signature}`
+          : null
     },
     can_create_fiat_payout:
       roleCan(role, "operate") &&
@@ -503,9 +505,8 @@ export async function sendTelegramPaymentReceipt({ payment, userId, base = "" })
   }
 
   const settlementAmount = Number(payment.approval?.amount_usdg || 0);
-  const statusLabel = payment.status === "settled_devnet"
-    ? "Settled on Solana Devnet"
-    : "Settled in controlled demo";
+  const statusLabel = payment.status === "settled_celo" ? "Settled on Celo Mainnet" :
+    payment.status === "settled_devnet" ? "Settled on Solana Devnet" : "Settled in controlled demo";
   const invoiceAmount = payment.source_amount && payment.source_currency
     ? `${payment.source_currency} ${Number(payment.source_amount).toLocaleString()}`
     : "—";
@@ -516,7 +517,8 @@ export async function sendTelegramPaymentReceipt({ payment, userId, base = "" })
     `Supplier: ${payment.supplier || "—"}`,
     `Invoice: ${payment.invoice_number || payment.invoice_name || payment.id}`,
     `Invoice amount: ${invoiceAmount}`,
-    settlementAmount > 0 ? `Settlement amount: ${settlementAmount} USDG` : null,
+    payment.approval?.celo ? `Celo settlement: ${payment.approval.celo.amount} ${payment.approval.celo.token}` :
+      settlementAmount > 0 ? `Settlement amount: ${settlementAmount} USDG` : null,
     `Destination: ${payment.destination_amount || payment.destination_currency || "—"}`,
     `Status: ${statusLabel}`,
     "Reconciled: ✓",
@@ -529,6 +531,9 @@ export async function sendTelegramPaymentReceipt({ payment, userId, base = "" })
       text: "View Solana transaction",
       url: `https://explorer.solana.com/tx/${payment.settlement_signature}?cluster=devnet`
     }]);
+  }
+  if (payment.status === "settled_celo" && payment.settlement_signature) {
+    buttons.push([{ text: "View Celo transaction", url: `https://celoscan.io/tx/${payment.settlement_signature}` }]);
   }
   if (base) {
     buttons.push([{ text: "Open 33Jack", web_app: { url: dashboardUrl(base) } }]);

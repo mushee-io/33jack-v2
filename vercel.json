@@ -80,5 +80,11 @@
       "source": "/app/:path*",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/v2/schedule?operation=runDue",
+      "schedule": "0 9 * * *"
+    }
   ]
 }

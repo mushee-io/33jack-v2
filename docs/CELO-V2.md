@@ -47,3 +47,15 @@ Retrieve unsigned transfer data, review recipient and amount, **sign through an 
 - Celo Mainnet payment records are stored only if DATABASE_URL is configured. No in-memory "fake settled" fallback exists for V2.
 - Never treat a demo route quote as a live FX price; V1 settlement-network scoring is illustrative.
 - No claim of smart-contract audit, compliance certification, or production bank-payout support.
+
+## Chat-channel & invoice handoff (V2)
+
+Web invoice-agent responses offer **Prepare wallet-signed Celo payment**, which opens the Celo screen and pre-fills only the invoice reference, not an unverified amount or beneficiary. Users can still use third-party agents via the authenticated V2 agent API.
+
+Telegram invoice messages and Mini App dashboard now show Celo review links. WhatsApp and WeChat existing signed invoice review messages also include a Celo checkout link. These integrations reuse the existing bot session and shared workspace permission records; existing V1 review and settlement links remain available.
+
+The V2 channel API is POST-only: /api/v2/channel?operation=context|propose|approve|refresh|confirm. It requires a Telegram signed Mini App session and launch token, or a short-lived signed WhatsApp/WeChat review token; the server verifies the invoice belongs to that workspace and the member has the correct capability. Propose requires operator privileges, the connected payer address, explicit wallet/amount confirmation and acknowledgement of any duplicate / beneficiary-change / suspicious risk. Missing invoice fields block payment. Approval requires an approver role **and** the separate JACK_APPROVAL_API_KEY plus an exact comparison with the original saved terms. Wallet signing remains mandatory; reconciliation checks exact onchain details. Channel proposals are unique per workspace/invoice across all chat channels via database idempotency.
+
+The channel review link is a bearer credential for WhatsApp/WeChat and expires after 15 minutes. A separate human approval credential is required; handle review links securely. Existing channel integrations **will not** work unless their provider keys, callback webhooks, workspace permissions and V2 database are configured. Celo payment intent expiry remains 30 minutes.
+
+**Limitations:** A WhatsApp/WeChat signed link alone does not prove the current browser user owns that messaging account. Do not weaken the separate human-approval credential or wallet-signature requirements. A production rollout should use user accounts + MFA/role-managed approval instead of sharing an operator approval API key. Celo is a wallet-to-wallet rail, not fiat payouts or automatic FX.

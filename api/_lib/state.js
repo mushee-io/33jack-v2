@@ -4,17 +4,19 @@ export const PAYMENT_STATUS = Object.freeze({
   SETTLING: "settling",
   SETTLED_DEMO: "settled_demo",
   SETTLED_DEVNET: "settled_devnet",
+  SETTLED_CELO: "settled_celo",
   REJECTED: "rejected",
   FAILED: "failed"
 });
 
 const transitions = {
-  analyzed: new Set(["approved", "rejected"]),
+  analyzed: new Set(["approved", "rejected", "settled_celo"]),
   approved: new Set(["settling", "rejected"]),
   settling: new Set(["settled_demo", "settled_devnet", "failed"]),
-  failed: new Set(["approved", "rejected", "settled_devnet", "settled_demo"]),
+  failed: new Set(["approved", "rejected", "settled_devnet", "settled_demo", "settled_celo"]),
   settled_demo: new Set(),
   settled_devnet: new Set(),
+  settled_celo: new Set(),
   rejected: new Set()
 };
 

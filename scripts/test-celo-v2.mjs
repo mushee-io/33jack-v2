@@ -82,3 +82,22 @@ test("onchain receipt verification requires exact official contract, amount and 
     globalThis.fetch = original;
   }
 });
+
+import { invoiceChannelAgentId, assertInvoiceEligibility, safeInvoiceSummary } from "../api/_lib/channel-v2-auth.js";
+
+test("channel invoice role, risk and no automatic FX", () => {
+  const payment = { id: "pay_inv", status: "analyzed", source_currency: "GBP", source_amount: 125, risk:{duplicate:true, beneficiary_changed:true} };
+  assert.throws(() => assertInvoiceEligibility(payment, {}), /acknowledgement/);
+  assert.throws(() => assertInvoiceEligibility(payment, {duplicate:true}), /beneficiary_changed/);
+  assert.deepEqual(assertInvoiceEligibility(payment, {duplicate:true,beneficiary_changed:true}).flags, ["duplicate","beneficiary_changed"]);
+  assert.throws(()=>assertInvoiceEligibility({ ...payment, status:"settled_celo" },{duplicate:true,beneficiary_changed:true}), /not eligible/);
+  assert.throws(()=>assertInvoiceEligibility({...payment, risk:{missing_fields:["supplier"]}},{}),/Resolve missing/);
+  const summary = safeInvoiceSummary(payment,"operator");
+  assert.equal(summary.originalAmount,"125");
+  assert.equal(summary.originalCurrency,"GBP");
+  assert.equal(summary.canPropose,true);
+  assert.equal(summary.canApprove,false);
+  assert.equal(safeInvoiceSummary(payment,"approver").canPropose,false);
+  assert.equal(invoiceChannelAgentId("one"),invoiceChannelAgentId("one"));
+  assert.notEqual(invoiceChannelAgentId("one"),invoiceChannelAgentId("two"));
+});

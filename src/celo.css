@@ -34,3 +34,7 @@
 .celo-v2-disclaimer{font-size:11px;opacity:.6;line-height:1.6;margin:20px 0}
 @media(max-width:800px){.celo-v2{padding:17px 0 45px}.celo-v2-hero{flex-direction:column;padding:23px}.celo-v2-metrics{grid-template-columns:repeat(2,1fr)}.celo-v2-grid{grid-template-columns:1fr}.celo-v2-result dl{grid-template-columns:1fr}}
 @media(max-width:400px){.celo-v2-metrics{grid-template-columns:1fr}.celo-v2-two{grid-template-columns:1fr}}
+
+.celo-channel-review{margin:16px 0;border-color:rgba(177,244,166,.42);background:#15261a}
+.celo-ack{display:flex!important;align-items:center;gap:10px;margin:10px 0!important;font-weight:500!important;line-height:1.5}
+.celo-ack input{width:17px!important;height:17px!important;margin:0!important;flex:none}

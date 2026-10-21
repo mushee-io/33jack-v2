@@ -2384,7 +2384,7 @@ This invoice is a Jack Swipe beta demonstration.`;
   );
 }
 
-function AgentWorkspace({ onNewPayment }) {
+function AgentWorkspace({ onNewPayment, onCelo }) {
   const [messages, setMessages] = useState([
     { role: "agent", text: "Ask me about payment risk, failures, suppliers, or what needs attention. I am read-only here; money movement stays behind the structured approval flow." }
   ]);
@@ -2441,6 +2441,9 @@ function AgentWorkspace({ onNewPayment }) {
                         <ShieldCheck size={14}/> Open structured approval flow
                       </button>
                     )}
+                    <button type="button" className="secondary" onClick={()=>onCelo?.(m.proposal)}>
+                      <Wallet size={14}/> Prepare wallet-signed Celo payment
+                    </button>
                   </div>
                 )}
               </div>
@@ -2773,6 +2776,7 @@ function App() {
   const [persistence, setPersistence] = useState("loading");
   const [externalReview, setExternalReview] = useState(null);
   const [externalReviewError, setExternalReviewError] = useState("");
+  const [celoSeed, setCeloSeed] = useState(null);
 
   function navigateTo(view, options = {}) {
     const nextView = APP_ROUTES[view] ? view : "Overview";
@@ -2823,6 +2827,7 @@ function App() {
         ? params.get("wxToken")
         : params.get("waToken");
 
+    if (window.location.pathname.startsWith("/app/celo")) return;
     if (!["whatsapp", "wechat"].includes(channel) || !paymentId || !token) return;
 
     let cancelled = false;
@@ -3048,7 +3053,7 @@ function App() {
 
           <footer><Logo/><p>Autonomous cross-border finance for global businesses.</p><span>Colosseum build · Solana</span></footer>
           </> : active === "Agent" ? (
-            <AgentWorkspace onNewPayment={() => setFlow(true)}/>
+            <AgentWorkspace onNewPayment={() => setFlow(true)} onCelo={(proposal)=>{setCeloSeed(proposal);navigateTo("Celo Mainnet");}}/>
           ) : active === "Voice Pay β" ? (
             <VoicePayWorkspace/>
           ) : active === "Jack Swipe β" ? (
@@ -3071,7 +3076,7 @@ function App() {
           ) : active === "Settlement Network" ? (
             <SettlementNetworkWorkspace/>
           ) : active === "Celo Mainnet" ? (
-            <CeloWorkspace/>
+            <CeloWorkspace seed={celoSeed}/>
           ) : (
             <RecordsWorkspace
               type={active}

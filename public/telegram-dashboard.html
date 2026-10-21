@@ -198,7 +198,7 @@
             </div>
             <div class="riskline ${flags.length ? "warn" : ""}">${flags.length ? "Review: " + esc(flags.join("; ")) : "No active risk blocker"}</div>
             <div class="actions">
-              ${p.review_url ? '<button class="action primary review" data-url="' + esc(p.review_url) + '" type="button">Review & Pay</button>' : ""}
+              ${p.review_url ? '<button class="action primary review" data-url="' + esc(p.review_url) + '" type="button">Review & Pay</button>' : ""} ${p.celo_url ? '<button class="action review" data-url="' + esc(p.celo_url) + '" type="button">Pay on Celo</button>' : ""} ${p.celo_url ? '<button class="action review" data-url="' + esc(p.celo_url) + '" type="button">Pay on Celo</button>' : ""}
               ${explorer ? '<button class="action explorer" data-url="' + esc(explorer) + '" type="button">Solana transaction</button>' : ""}
             </div>
           </article>`;

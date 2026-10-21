@@ -1202,7 +1202,7 @@ export async function handleWhatsAppWebhook(req, res, rawBody) {
         );
 
         const reviewUrl = signedReviewUrl(base, analysis, from, workspace.id);
-        await sendReviewLink(from, invoiceSummary(analysis), reviewUrl);
+        await sendReviewLink(from, invoiceSummary(analysis) + (reviewUrl ? "\n\nCelo wallet checkout: " + reviewUrl.replace("/?channel=", "/app/celo?channel=") : ""), reviewUrl);
         continue;
       }
 
@@ -1239,7 +1239,7 @@ export async function handleWhatsAppWebhook(req, res, rawBody) {
           : "\n\nNo active deterministic risk flag is currently recorded.";
         await sendReviewLink(
           from,
-          `${answer.text}${riskLine}\n\nInvoice: ${referenced.invoice_number || referenced.invoice_name || referenced.id}`,
+          `${answer.text}${riskLine}\n\nInvoice: ${referenced.invoice_number || referenced.invoice_name || referenced.id}${reviewUrl ? "\n\nCelo wallet checkout: " + reviewUrl.replace("/?channel=", "/app/celo?channel=") : ""}`,
           reviewUrl
         );
         await addAuditEvent(

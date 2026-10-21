@@ -17,9 +17,11 @@ export async function ensureV2Store() {
       "amount TEXT NOT NULL, amount_units TEXT NOT NULL, recipient TEXT NOT NULL, payer TEXT, memo TEXT NOT NULL DEFAULT '', " +
       "status TEXT NOT NULL DEFAULT 'proposed', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), " +
       "expires_at TIMESTAMPTZ NOT NULL, approved_at TIMESTAMPTZ, approved_by TEXT, " +
-      "tx_hash TEXT UNIQUE, confirmed_at TIMESTAMPTZ, verification JSONB, " +
+      "tx_hash TEXT UNIQUE, confirmed_at TIMESTAMPTZ, verification JSONB, source_context JSONB, " +
       "UNIQUE(agent_id, idempotency_key))"
-    ).catch((error) => { initialized = null; throw error; });
+    ).then(async () => {
+      await db().unsafe("ALTER TABLE jack_v2_intents ADD COLUMN IF NOT EXISTS source_context JSONB");
+    }).catch((error) => { initialized = null; throw error; });
   }
   await initialized;
   return db();
@@ -33,7 +35,8 @@ function publicIntent(row) {
     payer: row.payer, memo: row.memo, status: row.status,
     createdAt: row.created_at, expiresAt: row.expires_at,
     approvedAt: row.approved_at, confirmedAt: row.confirmed_at,
-    txHash: row.tx_hash, verification: row.verification
+    txHash: row.tx_hash, verification: row.verification,
+    sourceContext: row.source_context || null
   };
 }
 
@@ -42,11 +45,12 @@ export async function proposeV2Intent(agentId, proposal, key) {
   const fingerprint = createHash("sha256").update(JSON.stringify(proposal)).digest("hex");
   const id = randomUUID();
   const rows = await sql.unsafe(
-    "INSERT INTO jack_v2_intents (id,agent_id,idempotency_key,fingerprint,chain_id,token,token_address,decimals,amount,amount_units,recipient,payer,memo,expires_at) " +
-    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW() + INTERVAL '30 minutes') " +
+    "INSERT INTO jack_v2_intents (id,agent_id,idempotency_key,fingerprint,chain_id,token,token_address,decimals,amount,amount_units,recipient,payer,memo,expires_at,source_context) " +
+    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW() + INTERVAL '30 minutes',$14::jsonb) " +
     "ON CONFLICT(agent_id,idempotency_key) DO NOTHING RETURNING *",
     [id, agentId, key, fingerprint, proposal.chainId, proposal.token, proposal.tokenAddress, proposal.decimals,
-      proposal.amount, proposal.amountUnits, proposal.recipient, proposal.payer, proposal.memo]
+      proposal.amount, proposal.amountUnits, proposal.recipient, proposal.payer, proposal.memo,
+      proposal.sourceContext ? JSON.stringify(proposal.sourceContext) : null]
   );
   if (rows[0]) return { intent: publicIntent(rows[0]), created: true };
   const existing = await sql.unsafe(
@@ -89,5 +93,14 @@ export async function recordV2Confirmation(agentId, id, result) {
     }
     throw error;
   }
+  return publicIntent(rows[0]);
+}
+
+export async function getV2IntentForInvoice(agentId, idempotencyKey) {
+  const sql = await ensureV2Store();
+  const rows = await sql.unsafe(
+    "SELECT * FROM jack_v2_intents WHERE agent_id=$1 AND idempotency_key=$2 LIMIT 1",
+    [agentId, idempotencyKey]
+  );
   return publicIntent(rows[0]);
 }

@@ -775,7 +775,7 @@ async function processWeChatMessage(req, message) {
     const reviewUrl = signedReviewUrl(base, analysis, openId, workspace.id);
     await sendText(
       openId,
-      `${invoiceSummary(analysis)}${reviewUrl ? `\n\nReview & Pay: ${reviewUrl}` : ""}`
+      `${invoiceSummary(analysis)}${reviewUrl ? `\n\nReview & Pay: ${reviewUrl}\nCelo wallet checkout: ${reviewUrl.replace("/?channel=", "/app/celo?channel=")}` : ""}`
     );
     return;
   }
@@ -938,7 +938,7 @@ async function processWeChatMessage(req, message) {
         blockers.length
           ? `Review required: ${blockers.join("; ")}.`
           : "No active deterministic risk flag is currently recorded.",
-        reviewUrl ? `Review & Pay: ${reviewUrl}` : null
+        reviewUrl ? `Review & Pay: ${reviewUrl}\nCelo wallet checkout: ${reviewUrl.replace("/?channel=", "/app/celo?channel=")}` : null
       ].filter(Boolean).join("\n")
     );
     await addAuditEvent(

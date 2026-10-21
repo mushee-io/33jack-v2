@@ -16,7 +16,7 @@ async function jsonResponse(response) {
   return data;
 }
 
-export default function CeloWorkspace() {
+export default function CeloWorkspace({ seed = null }) {
   const [network, setNetwork] = useState(DEFAULT_NETWORK);
   const [tokens, setTokens] = useState([]);
   const [health, setHealth] = useState(null);
@@ -34,6 +34,18 @@ export default function CeloWorkspace() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
+  const [invoice, setInvoice] = useState(null);
+  const [acknowledgements, setAcknowledgements] = useState({});
+  const [exactTermsChecked, setExactTermsChecked] = useState(false);
+  const [channelProof] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const channel = params.get("channel");
+    const paymentId = params.get("paymentId");
+    if (!["telegram","whatsapp","wechat"].includes(channel) || !paymentId) return null;
+    return { channel, paymentId, token: params.get(channel === "whatsapp" ? "waToken" : "wxToken") || "",
+      telegramLaunchToken: params.get("telegramLaunchToken") || "" };
+  });
+
 
   useEffect(() => {
     let active = true;
@@ -46,6 +58,52 @@ export default function CeloWorkspace() {
     }).catch(() => { if (active) setHealth(false); });
     return () => { active = false; };
   }, []);
+
+
+  useEffect(() => {
+    if (!seed || channelProof) return;
+    setMemo("33JACK invoice:" + String(seed.paymentId || seed.invoice || "").slice(0,120));
+    // Invoice fiat amounts never auto-convert to Celo stablecoins.
+    setMessage("Invoice reference added. Verify and enter Celo token, exact amount and recipient manually.");
+  }, [seed?.paymentId, channelProof]);
+
+  function channelCredentials() {
+    if (!channelProof) return null;
+    return {
+      ...channelProof,
+      telegramInitData: channelProof.channel === "telegram" ?
+        (window.Telegram?.WebApp?.initData || "") : undefined
+    };
+  }
+
+  async function channelRequest(operation, payload = {}, extraHeaders = {}) {
+    if (!channelProof) throw new Error("No signed invoice review was supplied");
+    return jsonResponse(await fetch("/api/v2/channel?operation=" + operation, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...extraHeaders },
+      body: JSON.stringify({ ...channelCredentials(), ...payload })
+    }));
+  }
+
+  useEffect(() => {
+    if (!channelProof) return;
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await channelRequest("context");
+        if (!active) return;
+        setInvoice(data.invoice);
+        if (data.intent) setIntent(data.intent);
+        setMemo("33JACK invoice:" + data.invoice.id);
+      } catch(e) {
+        if (active) setError("Signed invoice review failed: " + (e.message || "unknown error"));
+      }
+    };
+    load();
+    // Signed channel tokens remain in component memory, not navigation history.
+    if (window.history.replaceState) window.history.replaceState(null, "", "/app/celo");
+    return () => { active = false; };
+  }, [channelProof]);
 
   function headers(extra = {}) {
     return {
@@ -85,11 +143,14 @@ export default function CeloWorkspace() {
   async function propose() {
     await perform(async () => {
       if (!wallet) throw new Error("Connect a wallet first to bind the proposal to its payer");
-      if (!agentId.trim() || !agentKey.trim()) throw new Error("Enter the configured agent ID and agent API key");
-      const idempotency = crypto.randomUUID();
-      const data = await request("propose", "POST", {
-        network: "celo", token, amount, recipient, payer: wallet, memo
-      }, { "Idempotency-Key": idempotency });
+      if (!channelProof && (!agentId.trim() || !agentKey.trim())) throw new Error("Enter the configured agent ID and agent API key");
+      const data = channelProof
+        ? await channelRequest("propose", {
+            token, amount, recipient, payer: wallet, acknowledgements, confirmExactTerms: exactTermsChecked
+          })
+        : await request("propose", "POST", {
+            network: "celo", token, amount, recipient, payer: wallet, memo
+          }, { "Idempotency-Key": crypto.randomUUID() });
       setIntent(data.intent);
       setUnsignedTx(null);
       setTxHash("");
@@ -101,9 +162,13 @@ export default function CeloWorkspace() {
     await perform(async () => {
       if (!intent || intent.status !== "proposed") throw new Error("No pending proposal");
       if (!window.confirm("Approve " + intent.amount + " " + intent.token + " from " + intent.payer + " to " + intent.recipient + " on Celo Mainnet?")) return;
-      const data = await request("approve", "POST", {
-        id: intent.id, confirmation: "APPROVE:" + intent.id
-      }, { "x-jack-approval-key": approvalKey });
+      const body = {
+        id: intent.id, confirmation: "APPROVE:" + intent.id,
+        confirmTerms: { amount:intent.amount, token:intent.token, payer:intent.payer, recipient:intent.recipient }
+      };
+      const data = channelProof
+        ? await channelRequest("approve", body, { "x-jack-approval-key": approvalKey })
+        : await request("approve", "POST", body, { "x-jack-approval-key": approvalKey });
       setIntent(data.intent);
       setUnsignedTx(data.unsignedTransaction);
       setMessage("Approved. Only your wallet can sign and broadcast this payment.");
@@ -150,7 +215,9 @@ export default function CeloWorkspace() {
   async function reconcile() {
     await perform(async () => {
       if (!intent || !txHash) throw new Error("No transaction hash yet");
-      const data = await request("confirm", "POST", { id: intent.id, txHash });
+      const data = channelProof
+        ? await channelRequest("confirm", { id:intent.id, txHash })
+        : await request("confirm", "POST", { id:intent.id, txHash });
       if (data.status === "pending") {
         setMessage((data.reason || "Transaction pending") + ". Use Reconcile again after the next Celo block.");
         return;
@@ -163,7 +230,9 @@ export default function CeloWorkspace() {
   async function refresh() {
     await perform(async () => {
       if (!intent) throw new Error("No current proposal");
-      const data = await request("intent", "GET", { id: intent.id });
+      const data = channelProof
+        ? await channelRequest("refresh", { id: intent.id })
+        : await request("intent", "GET", { id: intent.id });
       setIntent(data.intent);
       setUnsignedTx(data.unsignedTransaction);
       setMessage("Payment status refreshed.");
@@ -183,18 +252,32 @@ export default function CeloWorkspace() {
         <div><small>Wallet custody</small><b>Self-custody</b></div>
         <div><small>Signing policy</small><b>Human + wallet</b></div>
       </div>
+      {channelProof && <article className="celo-v2-panel celo-channel-review">
+        <span className="eyebrow">SIGNED {channelProof.channel.toUpperCase()} HANDOFF</span>
+        <h3>{invoice ? invoice.invoice : "Verifying invoice access…"}</h3>
+        {invoice && <>
+          <p>Supplier: <strong>{invoice.supplier || "Not identified"}</strong> · Invoice: {invoice.originalAmount || "—"} {invoice.originalCurrency || ""}</p>
+          <p>Workspace role: <strong>{invoice.role}</strong>. Celo payment amounts are not automatically converted from fiat invoices.</p>
+          {["duplicate","beneficiary_changed","suspicious"].filter(key => invoice.risk?.[key]).map(key =>
+            <label key={key} className="celo-ack"><input type="checkbox" checked={acknowledgements[key]===true}
+              onChange={e=>setAcknowledgements(prev=>({...prev,[key]:e.target.checked}))} />
+              I reviewed the {key.replaceAll("_"," ")} risk flag</label>
+          )}
+          {!!invoice.risk?.missing_fields?.length && <p className="celo-v2-error">Invoice incomplete: {invoice.risk.missing_fields.join(", ")}. Resolve these fields first.</p>}
+        </>}
+      </article>}
       <div className="celo-v2-grid">
         <article className="celo-v2-panel">
           <span className="eyebrow">01 / CONNECT</span><h3>Connect your Celo wallet</h3>
           <p>Transactions are signed in MetaMask or a compatible EVM wallet. No private key is stored by 33JACK.</p>
           <button type="button" className="celo-v2-primary" disabled={working} onClick={connect}>{wallet ? "Connected · " + wallet.slice(0, 7) + "…" + wallet.slice(-4) : "Connect wallet"}</button>
         </article>
-        <article className="celo-v2-panel">
+        {!channelProof && <article className="celo-v2-panel">
           <span className="eyebrow">02 / AGENT CREDENTIALS</span><h3>Agent authentication</h3>
           <p>Use server-configured V2 agent credentials. Keys remain in this page's memory, not browser storage.</p>
           <label>Agent ID<input autoComplete="off" value={agentId} onChange={e => setAgentId(e.target.value)} placeholder="my-agent" /></label>
           <label>Agent API key<input type="password" autoComplete="off" value={agentKey} onChange={e => setAgentKey(e.target.value)} placeholder="Agent secret" /></label>
-        </article>
+        </article>}
         <article className="celo-v2-panel">
           <span className="eyebrow">03 / PAYMENT INTENT</span><h3>Prepare a payment</h3>
           <div className="celo-v2-two">
@@ -202,15 +285,19 @@ export default function CeloWorkspace() {
             <label>Amount<input value={amount} inputMode="decimal" onChange={e => setAmount(e.target.value)} placeholder="1.00"/></label>
           </div>
           <label>Recipient address<input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="0x…" spellCheck={false}/></label>
-          <label>Memo / invoice<input value={memo} onChange={e => setMemo(e.target.value)} placeholder="Vendor invoice #123"/></label>
-          <button type="button" className="celo-v2-primary" disabled={working || !wallet} onClick={propose}>Create approval-required proposal</button>
+          <label>Memo / invoice<input value={memo} readOnly={!!channelProof} onChange={e => setMemo(e.target.value)} placeholder="Vendor invoice #123"/></label>
+          {channelProof && <label className="celo-ack"><input type="checkbox" checked={exactTermsChecked} onChange={e=>setExactTermsChecked(e.target.checked)}/>
+            I independently verified the exact token, amount, payer wallet and recipient address.</label>}
+          <button type="button" className="celo-v2-primary"
+            disabled={working || !wallet || (channelProof && (!invoice?.canPropose || !!invoice?.risk?.missing_fields?.length || !exactTermsChecked || !!intent))}
+            onClick={propose}>Create approval-required proposal</button>
         </article>
         <article className="celo-v2-panel">
           <span className="eyebrow">04 / APPROVE & SETTLE</span><h3>Human-controlled execution</h3>
           <p>No agent can send funds on its own. Human approval and a separate wallet signature are mandatory.</p>
           <label>Separate approval credential<input type="password" autoComplete="off" value={approvalKey} onChange={e => setApprovalKey(e.target.value)} placeholder="Human approval secret"/></label>
           <div className="celo-v2-actions">
-            <button type="button" disabled={working || intent?.status !== "proposed"} onClick={approve}>Approve exact terms</button>
+            <button type="button" disabled={working || intent?.status !== "proposed" || (channelProof && !invoice?.canApprove)} onClick={approve}>Approve exact terms</button>
             <button type="button" disabled={working || intent?.status !== "approved" || !unsignedTx || Boolean(txHash)} onClick={send}>Send with wallet</button>
             <button type="button" disabled={working || !txHash || intent?.status === "confirmed"} onClick={reconcile}>Reconcile onchain</button>
           </div>

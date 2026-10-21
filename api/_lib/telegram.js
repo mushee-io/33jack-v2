@@ -335,6 +335,9 @@ function dashboardPayment(payment, userId, base, role) {
       ["USD", "GBP", "CNY", "INR"].includes(String(payment.destination_currency || "").toUpperCase()),
     review_url: base && launchToken
       ? `${base}/telegram.html?payment=${encodeURIComponent(payment.id)}&launch=${encodeURIComponent(launchToken)}`
+      : null,
+    celo_url: base && launchToken
+      ? `${base}/app/celo?channel=telegram&paymentId=${encodeURIComponent(payment.id)}&telegramLaunchToken=${encodeURIComponent(launchToken)}`
       : null
   };
 }
@@ -837,7 +840,8 @@ export async function handleTelegramWebhook(req, res) {
         base
           ? {
               reply_markup: {
-                inline_keyboard: [[{ text: "Review & Pay", web_app: { url: miniAppUrl } }]]
+                inline_keyboard: [[{ text: "Review & Pay", web_app: { url: miniAppUrl } }],
+                  [{ text: "Review on Celo Mainnet", web_app: { url: `${base}/app/celo?channel=telegram&paymentId=${encodeURIComponent(analysis.id)}&telegramLaunchToken=${encodeURIComponent(launchToken)}` } }]]
               }
             }
           : {}

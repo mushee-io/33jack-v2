@@ -887,3 +887,32 @@ export function persistenceMode() {
     process.env.NODE_ENV === "production";
   return isProduction ? "unavailable" : "memory";
 }
+
+
+// Celo uses its own approval/transaction state. Mirror a confirmed invoice
+// into the legacy dashboard only after onchain confirmation in jack_v2_intents.
+export async function markCeloInvoiceSettled(paymentId, workspaceId, txHash) {
+  const client = db();
+  if (!client) throw new Error("DATABASE_URL required for confirmed Celo invoices");
+  await ensureSchema();
+  const rows = await client`
+    update jack_payments set
+      status = 'settled_celo',
+      settlement_signature = \${String(txHash)},
+      updated_at = now()
+    where id = \${String(paymentId)}
+      and workspace_id = \${String(workspaceId)}
+      and status in ('analyzed', 'failed')
+    returning id
+  `;
+  if (rows.length) {
+    await addAuditEvent(paymentId, "payment_status_changed", "celo-v2-rail", {
+      to:"settled_celo", signature:String(txHash), chain_id:42220,
+      workspace_id:String(workspaceId)
+    });
+    return true;
+  }
+  const existing = await getPayment(paymentId);
+  return existing?.status === "settled_celo" &&
+    String(existing?.settlement_signature || "").toLowerCase() === String(txHash).toLowerCase();
+}

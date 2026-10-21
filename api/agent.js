@@ -272,6 +272,7 @@ export default async function handler(req, res) {
   req.body = body;
 
   if (provider === "voice-transcribe") {
+    if (!gateLegacy(req,res)) return;
     return handleVoiceTranscription(body, res);
   }
 

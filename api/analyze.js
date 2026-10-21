@@ -165,6 +165,7 @@ export default async function handler(req, res) {
   const hash = invoiceHash(fileData);
   const exactDuplicate = await findPaymentByInvoiceHash(hash);
 
+  if (!process.env.GROQ_API_KEY && process.env.NODE_ENV !== "test" && process.env.JACK_ENABLE_LEGACY_SANDBOX !== "true") return res.status(503).json({error:"Real invoice analysis requires GROQ_API_KEY; demo invoice substitution is disabled on V2"});
   if (!process.env.GROQ_API_KEY) {
     const base = fallback(fileName, corridor);
     const history = await getBeneficiaryHistory(base.supplier, corridor);

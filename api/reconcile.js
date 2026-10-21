@@ -1,3 +1,4 @@
+import {gateLegacy} from "./_lib/legacy-access.js";
 import crypto from "node:crypto";
 import { Connection } from "@solana/web3.js";
 import {
@@ -227,6 +228,7 @@ export default async function handler(req, res) {
     }
   }
 
+  if (!gateLegacy(req,res)) return;
   const paymentId = req.query?.id || body?.paymentId;
   if (!paymentId) return res.status(400).json({ error: "payment id is required" });
 

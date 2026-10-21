@@ -223,6 +223,8 @@ async function existingSettlementResponse(payment, connection) {
 }
 
 export default async function handler(req, res) {
+  if (process.env.NODE_ENV !== "test" && process.env.JACK_ENABLE_LEGACY_SANDBOX !== "true") return res.status(410).json({error:"Legacy sandbox payment workflows are disabled on V2. Use Celo wallet-signed mainnet checkout."});
+
   if (!["telegram","whatsapp","wechat"].includes(String(req.body?.channel||"").toLowerCase()) && !gateLegacy(req,res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 

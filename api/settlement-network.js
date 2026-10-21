@@ -7,6 +7,8 @@ import {
 
 export default async function handler(req, res) {
   if (!gateLegacy(req,res)) return;
+  if (process.env.NODE_ENV !== "test" && process.env.JACK_ENABLE_LEGACY_SANDBOX !== "true") return res.status(410).json({error:"Legacy sandbox payment workflows are disabled on V2. Use Celo wallet-signed mainnet checkout."});
+
   const action = String(req.query?.action || "").toLowerCase();
 
   if (action === "health") {

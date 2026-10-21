@@ -65,3 +65,14 @@ Deployment-ready does not mean money-ready.
 Visit /setup.html on the access-protected V2 deployment. Retrieve JACK_BOOTSTRAP_SECRET inside Vercel project settings; do not send this secret through chat. Create your own strong password, enter the generated TOTP seed in an authenticator, and finish enrolment with a six-digit code. V2 encrypts TOTP seeds in the independent Neon database and blocks further first-owner bootstraps after success.
 
 Required environment: JACK_OPERATOR_DB_AUTH=true, JACK_PRIMARY_WORKSPACE_ID, JACK_BOOTSTRAP_SECRET, JACK_AGENT_TOKEN_SECRET, JACK_SESSION_SECRET, DATABASE_URL. Agent token issuance in /agent-console.html requires an MFA owner, an enabled allowlist policy and produces a signed 1-to-24-hour key. It is shown only once. Rotate JACK_AGENT_TOKEN_SECRET for emergency revocation; old tokens otherwise expire within 24 hours. No key permits a wallet transfer without human MFA approval and the user's wallet signature.
+
+## Direct real-wallet test workflow (owner, no agent bearer secret required)
+1. Wait for the Vercel project to deploy a commit including the operator checkout handler. A GitHub CI pass is not itself a production deployment.
+2. Under /setup.html on the access-protected deployed V2 site, finish one-time owner enrolment with the private bootstrap value from Vercel, a password you choose, and your authenticator. Never copy any private secret into GitHub or customer support chat.
+3. Sign in at /login.html. Open /app/celo. The "Test database and Celo RPC" button is read-only and never spends funds.
+4. Connect a wallet you own on Celo. For a strictly no-money check, do not press "Send with wallet". You can still submit a small proposal and approve the exact details after MFA; no transfer exists until your own wallet signs and broadcasts.
+5. For a live smoke test, you may choose a supported asset and a recipient you control. Ensure the wallet has the token and sufficient Celo fee balance. Start with 0.01 nominal USD, approve, sign in the external wallet, reconcile, and verify the onchain receipt in Celoscan.
+6. Independent AI agents use MCP/A2A/REST and the separately issued 1–24-hour credential from /agent-console.html, with recipient and payer allowlists. Never put agent tokens in browser input fields.
+
+### Current limitations
+An owner's browser receives no agent bearer API keys, and cannot run a payment without the user's wallet signature. This does not support autonomous signing, fiat offramps, Gmail OAuth without consent, or unverified multi-provider routing. Live quote/execution claims require independent chain and provider evidence. Vercel deployment protection should remain enabled for owner testing.

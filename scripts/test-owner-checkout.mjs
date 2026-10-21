@@ -44,13 +44,13 @@ test("operator wallet checkout validates exact terms and origin before accessing
   for(const [key,value] of [["JACK_SESSION_SECRET",save.session],["JACK_OPERATOR_DB_AUTH",save.db],["JACK_PRIMARY_WORKSPACE_ID",save.workspace]])if(value===undefined)delete process.env[key];else process.env[key]=value;
  }
 });
-test("owner namespace cannot be assigned to any external agent",()=>{
+test("owner namespace cannot be assigned to any external agent",async()=>{
  const saved=process.env.JACK_AGENT_TOKEN_SECRET;
  try{
   process.env.JACK_AGENT_TOKEN_SECRET="k".repeat(64);
   assert.throws(()=>mintAgentToken("operator_ws_checkout_test",1),/reserved/);
   assert.throws(()=>mintAgentToken("channel_chat",1),/reserved/);
-  assert.throws(()=>setAgentPolicy("operator_ws_checkout_test",{}, "owner"),/Invalid external agent ID/);
+  await assert.rejects(setAgentPolicy("operator_ws_checkout_test",{}, "owner"),/Invalid external agent ID/);
   assert.equal(requireAgent({headers:{"x-jack-agent-id":"operator_ws_checkout_test",authorization:"Bearer test"}}).status,403);
   assert.equal(requireAgent({headers:{"x-jack-agent-id":"channel_chat",authorization:"Bearer test"}}).status,403);
  }finally{

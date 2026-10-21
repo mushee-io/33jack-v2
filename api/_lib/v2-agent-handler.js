@@ -1,4 +1,5 @@
 import { requireAgent, requireHumanApproval } from "./agent-v2-auth.js";
+import {checkAgentPolicy} from "./agent-policy.js";
 import { normalizeCeloProposal, prepareCeloTransfer, verifyCeloPayment } from "./celo-v2.js";
 import { proposeV2Intent, getV2Intent, approveV2Intent, recordV2Confirmation } from "./agent-v2-store.js";
 
@@ -36,6 +37,8 @@ export default async function handler(req, res) {
       if (!/^[a-zA-Z0-9_.:-]{8,128}$/.test(idempotency)) return res.status(400).json({ error: "Idempotency-Key header (8-128 safe characters) is required" });
       const proposal = normalizeCeloProposal(req.body || {});
       if (!proposal.payer) return res.status(400).json({error:"Agent proposals must bind the exact payer wallet"});
+      const policy = await checkAgentPolicy(actor.agentId,proposal);
+      if(!policy.allowed)return res.status(403).json({error:"Spending policy denied: "+policy.reason});
       const result = await proposeV2Intent(actor.agentId, proposal, idempotency);
       return res.status(result.created ? 201 : 200).json({ ok: true, ...result, nextAction: "human_approval_required" });
     }

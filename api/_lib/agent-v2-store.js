@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import { randomUUID, createHash } from "node:crypto";
+import {ensureAgentPolicyStore,evaluateAgentPolicy} from "./agent-policy.js";
 
 let client;
 let initialized;
@@ -69,12 +70,24 @@ export async function getV2Intent(agentId, id) {
 }
 
 export async function approveV2Intent(agentId, id, approvedBy = "legacy-api-key") {
-  const sql = await ensureV2Store();
-  const rows = await sql.unsafe(
-    "UPDATE jack_v2_intents SET status='approved', approved_at=NOW(), approved_by=$3 " +
-    "WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() RETURNING *", [id, agentId, approvedBy]
-  );
+ const sql=await ensureV2Store();
+ // Channel invoice intents have separate workspace authorisation and per-invoice limits.
+ if(String(agentId).startsWith("channel_")){
+  const rows=await sql.unsafe("UPDATE jack_v2_intents SET status='approved',approved_at=NOW(),approved_by=$3 WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() RETURNING *",[id,agentId,approvedBy]);
   return publicIntent(rows[0]);
+ }
+ await ensureAgentPolicyStore();
+ return sql.begin(async trx=>{
+  await trx.unsafe("SELECT pg_advisory_xact_lock(hashtext($1))",[agentId]);
+  const rows=await trx.unsafe("SELECT * FROM jack_v2_intents WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() FOR UPDATE",[id,agentId]);
+  if(!rows[0])return null;
+  const policy=await trx.unsafe("SELECT policy FROM jack_v2_agent_policies WHERE agent_id=$1",[agentId]);
+  const today=await trx.unsafe("SELECT amount_units,decimals FROM jack_v2_intents WHERE agent_id=$1 AND status IN ('approved','confirmed') AND approved_at>=date_trunc('day',NOW())",[agentId]);
+  const verdict=evaluateAgentPolicy(policy[0]?.policy,rows[0],today);
+  if(!verdict.allowed)throw Object.assign(new Error("Spending policy denied at approval: "+verdict.reason),{status:403});
+  const updated=await trx.unsafe("UPDATE jack_v2_intents SET status='approved',approved_at=NOW(),approved_by=$3 WHERE id=$1 AND agent_id=$2 AND status='proposed' AND expires_at>NOW() RETURNING *",[id,agentId,approvedBy]);
+  return publicIntent(updated[0]);
+ });
 }
 
 export async function recordV2Confirmation(agentId, id, result) {

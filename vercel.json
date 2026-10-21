@@ -33,6 +33,22 @@
   },
   "rewrites": [
     {
+      "source": "/a2a",
+      "destination": "/api/v2/a2a"
+    },
+    {
+      "source": "/mcp",
+      "destination": "/api/v2/mcp"
+    },
+    {
+      "source": "/.well-known/agent.json",
+      "destination": "/api/v2/a2a?operation=card"
+    },
+    {
+      "source": "/.well-known/agent-card.json",
+      "destination": "/api/v2/a2a?operation=card"
+    },
+    {
       "source": "/api/v2/:resource",
       "destination": "/api/v2?resource=:resource"
     },

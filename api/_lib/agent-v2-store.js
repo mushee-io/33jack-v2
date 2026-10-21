@@ -34,7 +34,7 @@ function publicIntent(row) {
     amount: row.amount, amountUnits: row.amount_units, recipient: row.recipient,
     payer: row.payer, memo: row.memo, status: row.status,
     createdAt: row.created_at, expiresAt: row.expires_at,
-    approvedAt: row.approved_at, confirmedAt: row.confirmed_at,
+    approvedAt: row.approved_at, approvedBy: row.approved_by, confirmedAt: row.confirmed_at,
     txHash: row.tx_hash, verification: row.verification,
     sourceContext: row.source_context || null
   };
